@@ -18,17 +18,10 @@ public class DwriteNativeInstaller : Object {
     }
 
     public File? find_windows_system_file (string name) {
-        string[] roots = {"/run/media", "/media", "/mnt"};
-        foreach (string root_path in roots) {
-            try {
-                var dir = Dir.open (root_path);
-                string? volume_name;
-                while ((volume_name = dir.read_name ()) != null) {
-                    var candidate = File.new_for_path (root_path + "/" + volume_name + "/Windows/System32/" + name);
-                    if (candidate.query_exists ()) return candidate;
-                }
-            } catch (FileError e) { }
-        }
+        var bundled = File.new_for_path (Environment.get_current_dir () + "/assets/dlls/" + name.down ());
+        if (bundled.query_exists ()) return bundled;
+        var parent_bundled = File.new_for_path (Environment.get_current_dir () + "/../assets/dlls/" + name.down ());
+        if (parent_bundled.query_exists ()) return parent_bundled;
         return null;
     }
 }

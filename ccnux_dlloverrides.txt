@@ -1,0 +1,27 @@
+
+HKEY_CURRENT_USER\Software\Wine\DllOverrides
+    d2d1    REG_SZ    d
+    d3d10    REG_SZ    native,builtin
+    d3d10_1    REG_SZ    native,builtin
+    d3d10core    REG_SZ    native,builtin
+    d3d11    REG_SZ    native,builtin
+    d3d8    REG_SZ    native,builtin
+    d3d9    REG_SZ    native,builtin
+    d3dcompiler_47    REG_SZ    native,builtin
+    ddraw    REG_SZ    native,builtin
+    dinput    REG_SZ    native,builtin
+    dinput8    REG_SZ    native,builtin
+    dsound    REG_SZ    native,builtin
+    dxgi    REG_SZ    native,builtin
+    msxml3    REG_SZ    native,builtin
+    nvapi    REG_SZ    native
+    nvapi64    REG_SZ    native
+    nvcuda    REG_SZ    native
+    nvcuvid    REG_SZ    native
+    nvencodeapi64    REG_SZ    native
+    nvofapi64    REG_SZ    native
+    nvoptix    REG_SZ    native
+    version    REG_SZ    native,builtin
+    winhttp    REG_SZ    native,builtin
+    winmm    REG_SZ    native,builtin
+

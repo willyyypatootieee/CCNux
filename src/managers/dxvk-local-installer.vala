@@ -42,9 +42,23 @@ public class DxvkLocalInstaller : Object {
     private void copy_dxvk_binaries (File source, File destination) {
         try {
             if (!destination.query_exists ()) destination.make_directory_with_parents ();
-            string[] dxvk_files = {"d3d11.dll", "dxgi.dll"};
-            foreach (string name in dxvk_files)
-                source.get_child (name).copy (destination.get_child (name), FileCopyFlags.OVERWRITE);
+            string[] dxvk_files = {"d3d11.dll", "dxgi.dll", "d3d10core.dll", "d3d9.dll"};
+            foreach (string name in dxvk_files) {
+                var src_file = source.get_child (name);
+                if (src_file.query_exists ())
+                    src_file.copy (destination.get_child (name), FileCopyFlags.OVERWRITE);
+            }
+            string conf_content = "# CCNux Advanced 3D / DXVK Configuration\n" +
+                                  "dxvk.gplPipelineCache = True\n" +
+                                  "dxvk.enableAsync = True\n" +
+                                  "dxvk.numCompilerThreads = 0\n" +
+                                  "dxvk.presentInterval = 0\n" +
+                                  "dxgi.syncInterval = 0\n" +
+                                  "d3d11.maxTessFactor = 16\n" +
+                                  "d3d11.samplerAnisotropy = 16\n" +
+                                  "dxvk.useRawSsbo = True\n" +
+                                  "d3d11.constantBufferUpdateExt = True\n";
+            destination.get_child ("dxvk.conf").replace_contents (conf_content.data, null, false, FileCreateFlags.REPLACE_DESTINATION, null, null);
         } catch (Error e) { log ("Could not install product-local DXVK: " + e.message); }
     }
 

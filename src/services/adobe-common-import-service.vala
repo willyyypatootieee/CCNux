@@ -26,6 +26,28 @@ public class AdobeCommonImportService : Object {
         marker.replace_contents (manifest.str.data, null, false, FileCreateFlags.REPLACE_DESTINATION, out etag, cancellable);
     }
 
+    public async void ensure_auto_import (Cancellable? cancellable = null) {
+        var broker_file = prefix.get_child ("drive_c/Program Files/Common Files/Adobe/Adobe Desktop Common/IPCBox/AdobeIPCBroker.exe");
+        if (broker_file.query_exists ()) return;
+        var bundled = File.new_for_path (Environment.get_current_dir () + "/assets/adobe_common");
+        if (!bundled.query_exists ()) bundled = File.new_for_path (Environment.get_current_dir () + "/../assets/adobe_common");
+        if (bundled.query_exists ()) {
+            var destination = prefix.get_child ("drive_c/Program Files/Common Files/Adobe");
+            if (!destination.query_exists (cancellable)) {
+                try { destination.make_directory_with_parents (cancellable); } catch (Error e) { }
+            }
+            var manifest = new StringBuilder ("CCNux Bundled Adobe Common runtime\n");
+            foreach (string name in required) {
+                var child = bundled.get_child (name);
+                if (child.query_exists (cancellable)) {
+                    try {
+                        yield copy_tree (child, destination.get_child (name), name, manifest, cancellable);
+                    } catch (Error e) { }
+                }
+            }
+        }
+    }
+
     private async void copy_tree (File source, File destination, string relative, StringBuilder manifest, Cancellable? cancellable) throws Error {
         if (!destination.query_exists (cancellable)) destination.make_directory_with_parents (cancellable);
         var e = source.enumerate_children ("standard::name,standard::type", FileQueryInfoFlags.NONE, cancellable);

@@ -80,7 +80,27 @@ public class WineRuntimeConfigurator : Object {
             if (a.query_exists ()) yield archives.extract (a, prefix.root.get_child ("ccnux-" + name), cancellable);
         }
         var dxvk = File.new_for_path (asset ("dxvk.tar.gz"));
-        if (dxvk.query_exists ()) yield archives.extract (dxvk, prefix.root, cancellable);
+        if (dxvk.query_exists ()) {
+            yield archives.extract (dxvk, prefix.root, cancellable);
+            File? extracted_dir = null;
+            var e = prefix.root.enumerate_children ("standard::name", FileQueryInfoFlags.NONE, cancellable);
+            FileInfo? info;
+            while ((info = e.next_file (cancellable)) != null) {
+                if (info.get_name ().has_prefix ("dxvk-") && info.get_file_type () == FileType.DIRECTORY) {
+                    extracted_dir = prefix.root.get_child (info.get_name ());
+                    break;
+                }
+            }
+            if (extracted_dir != null) {
+                var source = extracted_dir.get_child ("x64");
+                string[] dxvk_files = {"d3d11.dll", "dxgi.dll", "d3d10core.dll", "d3d9.dll"};
+                foreach (string n in dxvk_files) {
+                    var src_file = source.get_child (n);
+                    if (src_file.query_exists ()) src_file.copy (system32.get_child (n), FileCopyFlags.OVERWRITE, cancellable, null);
+                }
+                log ("Installed DXVK to prefix system32");
+            }
+        }
 
         var icu_manager = new IcuAliasManager ();
         icu_manager.log.connect ((msg) => log (msg));
@@ -141,6 +161,29 @@ public class WineRuntimeConfigurator : Object {
                 log ("Bridged gdiplus.dll into shared Wine prefix");
                 string? gm;
                 gdiplus_marker.replace_contents ("".data, null, false, FileCreateFlags.REPLACE_DESTINATION, out gm, cancellable);
+            }
+        }
+        
+        var dxvk_sys32_marker = prefix.root.get_child (".ccnux-dxvk-system32-bridged");
+        if (!dxvk_sys32_marker.query_exists (cancellable)) {
+            File? extracted_dir = null;
+            var e = prefix.root.enumerate_children ("standard::name", FileQueryInfoFlags.NONE, cancellable);
+            FileInfo? info;
+            while ((info = e.next_file (cancellable)) != null) {
+                if (info.get_name ().has_prefix ("dxvk-") && info.get_file_type () == FileType.DIRECTORY) {
+                    extracted_dir = prefix.root.get_child (info.get_name ());
+                    break;
+                }
+            }
+            if (extracted_dir != null) {
+                var source = extracted_dir.get_child ("x64");
+                string[] dxvk_files = {"d3d11.dll", "dxgi.dll", "d3d10core.dll", "d3d9.dll"};
+                foreach (string n in dxvk_files) {
+                    var src_file = source.get_child (n);
+                    if (src_file.query_exists ()) src_file.copy (system32.get_child (n), FileCopyFlags.OVERWRITE, cancellable, null);
+                }
+                log ("Bridged DXVK to shared prefix system32");
+                dxvk_sys32_marker.replace_contents ("".data, null, false, FileCreateFlags.REPLACE_DESTINATION, null, cancellable);
             }
         }
     }
