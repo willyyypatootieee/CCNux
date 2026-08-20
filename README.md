@@ -26,8 +26,8 @@
 | :--- | :---: | :---: | :--- |
 | **Adobe After Effects** | `2024` | Working | **Advanced 3D Renderer** (Xwayland), DXVK Vulkan, ScriptUI |
 | **Adobe Premiere Pro** | `2024` | Working | OpenCL `nvidia.icd` dGPU Isolation & IPC Broker fixes |
-| **Adobe Illustrator** | `2024` | WIP | Isolated `dwrite.dll` text rendering & ICU resolution |
-| **Adobe Photoshop** | `2024` | WIP | Direct3D 11 / DXVK acceleration & Font Smoothing |
+| **Adobe Illustrator** | `2024` | 🚧 WIP | Isolated `dwrite.dll` text rendering & ICU resolution |
+| **Adobe Photoshop** | `2024` | 🚧 WIP | Direct3D 11 / DXVK acceleration & Font Smoothing |
 
 > **GPU Acceleration in Action**:
 > 
@@ -100,8 +100,10 @@ CCNux uses a decoupled OOP architecture separating the GTK4 UI, generic installe
 ## Additional Features & Fixes
 
 - **Fast Non-Blocking Launcher**: Asynchronous application spawning (`spawn_app`) displays splash screens in under 2 seconds.
+- **Dynamic Asset Fetching**: CCNux now automatically downloads and extracts core runtime assets (fonts, DLL overrides, registry tweaks) from GitHub Releases on the first launch, keeping the initial download size incredibly small (under 5MB).
 - **Native Desktop Integration**: CCNux automatically installs `.desktop` shortcuts. You can launch After Effects, Premiere Pro, and other Adobe apps directly from your GNOME / KDE / Rofi app launcher, just like native Linux applications—no need to open CCNux first.
 - **Font Synchronization**: Automatic system font bridging and font smoothing.
+- **Plugin Management (🚧 WIP)**: A unified installer for third-party `.exe` plugins and CEP extensions (like Mister Horse Animation Composer, FX Console).
 - **Clean OOP Architecture**: Modular installer structure using `InstallerFactory` and `ProductRuntimePolicy`.
 
 ---
@@ -143,15 +145,16 @@ meson compile -C build
 - [x] Clean OOP refactor with `InstallerFactory` and `ProductRuntimePolicy`
 - [x] Correct X11 `StartupWMClass` matching for GNOME Dock icons
 - [x] Desktop MIME file associations (`.aep`, `.prproj`, `.ai`, `.psd`)
+- [x] Dynamic Core Asset Fetching from GitHub Releases to keep binary size tiny
 
 ### Phase 2 (In Progress & Planned)
 
+- [ ] 🚧 **Adobe Illustrator 2024** graphical rendering issues & GPU canvas acceleration fixes
+- [ ] 🚧 **Adobe Photoshop 2024** stability profiling & canvas rendering
+- [ ] 🚧 **Automated plugin installer** for CEP / UXP extensions (Mister Horse, FX Console, Motion Bro)
 - [ ] AMD GPU (RADV) Vulkan driver improvements & performance tuning
 - [ ] Intel GPU (ANV/Iris) thorough compatibility testing, graphical artifact fixes & driver overrides (untested)
-- [ ] Adobe Illustrator 2024 graphical rendering issues & GPU canvas acceleration fixes
-- [ ] Adobe Photoshop 2024 stability profiling & canvas rendering
 - [ ] Universal Flatpak & AppImage distribution packages
-- [ ] Automated installer for CEP / UXP extensions (Mister Horse, Flow, Motion Bro)
 - [ ] Link & URL handler integration (Mister Horse / CC login)
 - [ ] Native Wayland (`winewayland.drv`) driver toggle
 - [ ] Native packages for AUR, `.deb`, and `.rpm`
