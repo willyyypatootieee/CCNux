@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Adobe Premiere Pro 2024
+Comment=Video editing software
+Exec=ccnux --run premiere-pro-2024 %U
+Icon=com.ccnux.premiere-pro
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;AudioVideoEditing;
+MimeType=application/x-premiere-project;
+StartupWMClass=adobe premiere pro.exe
