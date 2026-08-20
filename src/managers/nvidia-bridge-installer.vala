@@ -21,9 +21,7 @@ public class NvidiaBridgeInstaller : Object {
     }
 
     private string asset (string name) {
-        var local = File.new_for_path (Environment.get_current_dir () + "/assets/" + name);
-        if (local.query_exists ()) return local.get_path ();
-        return Environment.get_current_dir () + "/../assets/" + name;
+        return CcnuxConfig.get_assets_dir () + "/" + name;
     }
 
     public async void install (string bundled_asset_name, Cancellable? cancellable) throws Error {

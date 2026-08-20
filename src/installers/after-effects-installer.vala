@@ -15,8 +15,7 @@ public class AfterEffectsInstaller : AdobeProductInstaller {
         // Import CCNux / AeOnArch registry configurations for After Effects GPU & Direct3D
         string[] ae_regs = {"dxvk.reg", "fontsmooth.reg", "registry/ae_2024.reg", "registry/dedicated_gpu.reg", "registry/opengl_render.reg"};
         foreach (string reg_name in ae_regs) {
-            var reg_file = File.new_for_path (Environment.get_current_dir () + "/assets/" + reg_name);
-            if (!reg_file.query_exists ()) reg_file = File.new_for_path (Environment.get_current_dir () + "/../assets/" + reg_name);
+            var reg_file = File.new_for_path (CcnuxConfig.get_assets_dir () + "/" + reg_name);
             if (reg_file.query_exists ()) {
                 try { yield registry.import_file (reg_file, prefix.root, cancellable); } catch (Error e) {}
             }

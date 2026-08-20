@@ -50,6 +50,10 @@ public class CcnuxConfig : Object {
         return Environment.get_user_data_dir () + "/ccnux/runner/bin";
     }
 
+    public static string get_assets_dir () {
+        return Environment.get_user_data_dir () + "/ccnux/assets";
+    }
+
     public static string get_ccnux_wineprefix () {
         return Environment.get_user_data_dir () + "/ccnux/wineprefix";
     }

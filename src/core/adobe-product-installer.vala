@@ -148,9 +148,7 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
     protected virtual string project_to_wine_path (string path) { return path != "" ? "Z:" + path.replace ("/", "\\") : path; }
     protected void emit_log (string message) { log ("[%s] %s".printf (new DateTime.now_local ().format ("%H:%M:%S"), message)); }
     protected string asset (string name) {
-        var local = File.new_for_path (Environment.get_current_dir () + "/assets/" + name);
-        if (local.query_exists ()) return local.get_path ();
-        return Environment.get_current_dir () + "/../assets/" + name;
+        return CcnuxConfig.get_assets_dir () + "/" + name;
     }
     protected virtual async void before_launch (Cancellable? cancellable) throws Error { }
 

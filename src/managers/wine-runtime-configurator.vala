@@ -19,9 +19,7 @@ public class WineRuntimeConfigurator : Object {
     }
 
     private string asset (string name) {
-        var local = File.new_for_path (Environment.get_current_dir () + "/assets/" + name);
-        if (local.query_exists ()) return local.get_path ();
-        return Environment.get_current_dir () + "/../assets/" + name;
+        return CcnuxConfig.get_assets_dir () + "/" + name;
     }
 
     public async void set_dll_override (string name, string value, Cancellable? cancellable) throws Error {
@@ -43,7 +41,28 @@ public class WineRuntimeConfigurator : Object {
         return false;
     }
 
+    private async void ensure_core_assets (Cancellable? cancellable) throws Error {
+        var dlls_dir = File.new_for_path (CcnuxConfig.get_assets_dir () + "/dlls");
+        if (dlls_dir.query_exists ()) return;
+
+        log ("Core assets not found locally. Downloading from GitHub Releases...");
+        var archive = File.new_build_filename (Environment.get_user_data_dir (), "ccnux", "runner", "assets", "ccnux-core-assets.tar.gz");
+        if (!archive.get_parent ().query_exists ()) archive.get_parent ().make_directory_with_parents (null);
+        
+        string url = "https://github.com/willyyypatootieee/CCNux/releases/download/Optimization/ccnux-core-assets.tar.gz";
+        yield downloads.download (url, archive, cancellable);
+        
+        log ("Extracting core assets...");
+        var assets_dir = File.new_for_path (CcnuxConfig.get_assets_dir ());
+        if (!assets_dir.query_exists ()) assets_dir.make_directory_with_parents (null);
+        yield archives.extract (archive, assets_dir, cancellable);
+        
+        try { archive.delete (cancellable); } catch (Error e) {}
+        log ("Core assets successfully installed.");
+    }
+
     public async void setup_runtime (string[] install_registry_files, ProductRuntimePolicy runtime_policy, Cancellable? cancellable) throws Error {
+        yield ensure_core_assets (cancellable);
         prefix.ensure ();
         int boot_status = yield runner.run ({"wineboot"}, cancellable, null, false, prefix.root);
         var style = File.new_for_path (Environment.get_current_dir () + "/styles/wine_dark_theme.reg");
