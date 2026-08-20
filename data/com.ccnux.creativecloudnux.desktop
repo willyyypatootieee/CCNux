@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Creative Cloud Nux
+GenericName=Adobe Creative Cloud for Wine
+Comment=Install and launch supported Adobe products
+Exec=ccnux %U
+Icon=ccnux
+Terminal=false
+Categories=AudioVideo;Graphics;
+Keywords=after effects;premiere;illustrator;photoshop;adobe;wine;creative cloud;
+MimeType=application/x-aep;application/x-prproj;application/illustrator;image/vnd.adobe.photoshop;x-scheme-handler/misterhorse;
+StartupNotify=true
+StartupWMClass=com.ccnux.creativecloudnux
+X-GNOME-UsesNotifications=true
