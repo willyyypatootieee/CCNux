@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Adobe Illustrator 2024
+Comment=Vector graphics editor
+Exec=ccnux --run illustrator-2024 %U
+Icon=com.ccnux.illustrator
+Terminal=false
+Type=Application
+Categories=Graphics;VectorGraphics;
+MimeType=application/illustrator;
+StartupWMClass=illustrator.exe
