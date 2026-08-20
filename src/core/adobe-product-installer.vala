@@ -72,6 +72,8 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
             var configurator = new WineRuntimeConfigurator (prefix, runner, registry, archives, downloads, font_sync);
             configurator.log.connect (emit_log);
             yield configurator.update_runtime (update_registry_files, runtime_policy, nvidia_libs_asset, executable, cancellable);
+            var common_import = new AdobeCommonImportService (prefix.root);
+            yield common_import.ensure_auto_import (cancellable);
 
             if (use_native_dwrite || use_product_icu_aliases || use_product_dxvk) {
                 if (executable != null && executable.get_parent () != null)
@@ -143,7 +145,7 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
     public File plugins_location () { return support_files_location ().get_child ("Plug-ins"); }
     public File panels_location () { return support_files_location ().get_child ("Scripts").get_child ("ScriptUI Panels"); }
     public File cep_location () { return support_files_location ().get_child ("CEPHtmlEngine"); }
-    protected virtual string project_to_wine_path (string path) { return path; }
+    protected virtual string project_to_wine_path (string path) { return path != "" ? "Z:" + path.replace ("/", "\\") : path; }
     protected void emit_log (string message) { log ("[%s] %s".printf (new DateTime.now_local ().format ("%H:%M:%S"), message)); }
     protected string asset (string name) {
         var local = File.new_for_path (Environment.get_current_dir () + "/assets/" + name);
