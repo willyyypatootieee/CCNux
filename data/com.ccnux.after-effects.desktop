@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Adobe After Effects 2024
+GenericName=Adobe After Effects
+Comment=After Effects 2024 running through CCNux (Wine)
+Exec=ccnux --run after-effects-2024 %U
+Icon=com.ccnux.after-effects
+Terminal=false
+Categories=AudioVideo;Graphics;
+Keywords=after effects;adobe;ae;motion graphics;vfx;
+MimeType=application/x-aep;
+StartupNotify=true
+StartupWMClass=afterfx.exe
+
