@@ -29,8 +29,7 @@ public class AdobeCommonImportService : Object {
     public async void ensure_auto_import (Cancellable? cancellable = null) {
         var broker_file = prefix.get_child ("drive_c/Program Files/Common Files/Adobe/Adobe Desktop Common/IPCBox/AdobeIPCBroker.exe");
         if (broker_file.query_exists ()) return;
-        var bundled = File.new_for_path (Environment.get_current_dir () + "/assets/adobe_common");
-        if (!bundled.query_exists ()) bundled = File.new_for_path (Environment.get_current_dir () + "/../assets/adobe_common");
+        var bundled = File.new_for_path (CcnuxConfig.get_assets_dir () + "/adobe_common");
         if (bundled.query_exists ()) {
             var destination = prefix.get_child ("drive_c/Program Files/Common Files/Adobe");
             if (!destination.query_exists (cancellable)) {
