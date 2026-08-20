@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-aep">
+    <comment>Adobe After Effects project</comment>
+    <comment xml:lang="ru">Проект Adobe After Effects</comment>
+    <comment xml:lang="uk">Проєкт Adobe After Effects</comment>
+    <glob pattern="*.aep" case-sensitive="false"/>
+    <icon name="application-x-aep"/>
+  </mime-type>
+  <mime-type type="application/x-prproj">
+    <comment>Adobe Premiere Pro project</comment>
+    <glob pattern="*.prproj" case-sensitive="false"/>
+    <glob pattern="*.prel" case-sensitive="false"/>
+    <icon name="application-x-prproj"/>
+  </mime-type>
+  <mime-type type="application/illustrator">
+    <comment>Adobe Illustrator document</comment>
+    <comment xml:lang="ru">Документ Adobe Illustrator</comment>
+    <comment xml:lang="uk">Документ Adobe Illustrator</comment>
+    <glob pattern="*.ai" case-sensitive="false"/>
+    <icon name="application-x-ai"/>
+  </mime-type>
+  <mime-type type="image/vnd.adobe.photoshop">
+    <comment>Adobe Photoshop image</comment>
+    <comment xml:lang="ru">Изображение Adobe Photoshop</comment>
+    <comment xml:lang="uk">Зображення Adobe Photoshop</comment>
+    <glob pattern="*.psd" case-sensitive="false"/>
+    <icon name="application-x-psd"/>
+  </mime-type>
+</mime-info>

@@ -1,0 +1,38 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*~
+*.swo
+
+# C / C++ / Vala
+*.o
+*.so
+*.a
+*.la
+*.lo
+*.gir
+*.typelib
+
+# Meson / Ninja Build Directories
+build/
+builddir/
+meson-logs/
+meson-private/
+.ninja_deps
+.ninja_log
+compile_commands.json
+
+# Cache and OS Files
+.cache/
+.DS_Store
+Thumbs.db
+
+# Output Binaries
+ccnux
+
+# Assets (If fetched dynamically)
+assets/*.tar.gz
+assets/*.tar.xz
+assets/*.zip
+assets/*.dll
