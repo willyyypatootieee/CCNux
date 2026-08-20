@@ -23,6 +23,9 @@ meson-private/
 .ninja_log
 compile_commands.json
 
+# Node/NPM Bloat
+node_modules/
+
 # Cache and OS Files
 .cache/
 .DS_Store
@@ -36,3 +39,4 @@ assets/*.tar.gz
 assets/*.tar.xz
 assets/*.zip
 assets/*.dll
+data/gschemas.compiled
