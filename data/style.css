@@ -1,0 +1,100 @@
+/* CCNux workspace theme. The accent follows the selected Adobe product. */
+
+window, .app-root {
+  background: #171719;
+  color: #f4f2f5;
+}
+
+headerbar {
+  min-height: 46px;
+  padding: 0 10px;
+  background: #242426;
+  border-bottom: 1px solid #353538;
+}
+headerbar title { font-weight: 700; letter-spacing: -0.01em; }
+
+.sidebar {
+  background: #1d1d20;
+  border-right: 1px solid #37373a;
+  padding-top: 4px;
+}
+.sidebar-brand { padding: 16px 16px 14px; border-bottom: 1px solid #323236; margin-bottom: 8px; }
+.brand-mark { min-width: 30px; min-height: 30px; padding: 0; border-radius: 9px; background: linear-gradient(135deg, #8c68ff, #4e34b8); color: #fff; font-size: 11px; font-weight: 900; }
+.brand-name { color: #f4f1f6; font-size: 14px; font-weight: 800; }
+.brand-subtitle { color: #8f8a94; font-size: 10px; }
+.sidebar row {
+  min-height: 34px;
+  margin: 2px 0;
+  border-radius: 8px;
+  color: #d9d6dc;
+}
+.sidebar row:hover { background: #29292d; }
+.sidebar row:selected { background: linear-gradient(90deg, #365b8e, #2c466c); color: #ffffff; box-shadow: inset 3px 0 #8daeff; }
+.sidebar row image { opacity: 0.9; }
+.sidebar .product-row image { min-width: 20px; min-height: 20px; }
+.sidebar .home-row { margin-bottom: 8px; }
+.sidebar-section {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #97939b;
+  padding: 10px 8px 4px;
+}
+
+.home-page, .product-page { background: #19191b; }
+.home-intro { padding: 26px 4px 22px; }
+.eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: #a99fb3; }
+.display-heading { margin-top: 2px; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; }
+.page-description { color: #aaa6ae; font-size: 12px; }
+
+/* Product accent palette */
+.product-after-effects-2024, .product-premiere-pro-2024 { --ccnux-accent: #9f85ff; --ccnux-accent-fg: #17121f; }
+.product-illustrator-2024 { --ccnux-accent: #ff9e54; --ccnux-accent-fg: #251307; }
+.product-photoshop-2024 { --ccnux-accent: #36c6e6; --ccnux-accent-fg: #06232a; }
+
+.product-card {
+  min-height: 92px;
+  background: #252528;
+  border: 1px solid #3b3b3f;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px alpha(#000000, 0.16);
+  padding: 0;
+  transition: 120ms ease;
+}
+.product-card:hover, .product-card:focus-visible {
+  background: #2b2b2f;
+  border-color: var(--ccnux-accent);
+  box-shadow: 0 10px 28px alpha(#000000, 0.24);
+}
+.product-card:active { background: #303035; }
+.product-icon { border-radius: 10px; }
+.card-title { font-size: 14px; font-weight: 750; color: #f3f1f4; }
+.card-meta { font-size: 11px; color: #a7a3aa; }
+.card-arrow { color: #8d8991; opacity: 0.75; }
+
+.product-page { padding-top: 22px; }
+.product-hero { margin: 0 0 26px; padding: 18px; border: 1px solid #39393d; border-radius: 14px; background: linear-gradient(110deg, #252528, #202023); }
+.hero-icon { border-radius: 12px; }
+.title-1 { font-size: 28px; font-weight: 800; letter-spacing: -0.035em; }
+.product-overview { margin: 0 2px; }
+.section-title { font-size: 14px; font-weight: 800; color: #f1eef3; }
+.overview-copy { color: #aaa6ae; font-size: 12px; line-height: 1.45; }
+.info-card { min-height: 62px; padding: 12px 14px; border: 1px solid #39393d; border-radius: 10px; background: #222225; }
+.info-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; color: var(--ccnux-accent); }
+.info-copy { font-size: 12px; font-weight: 650; color: #e5e1e7; }
+.status-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid #4a4a4e; color: #aaa6ae; }
+.status-badge.installed { color: #72d39b; border-color: alpha(#72d39b, 0.55); background: alpha(#72d39b, 0.08); }
+.status-badge.running { color: var(--ccnux-accent); border-color: alpha(currentColor, 0.55); background: alpha(currentColor, 0.08); }
+.action-button { min-height: 32px; padding: 0 15px; border-radius: 8px; font-weight: 700; font-size: 12px; }
+.action-button.suggested-action { background: var(--ccnux-accent); color: var(--ccnux-accent-fg); border: none; }
+.caption-heading, .caption-heading-danger { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; margin-top: 4px; }
+.caption-heading { color: var(--ccnux-accent); }
+.caption-heading-danger { color: #ff827e; }
+.boxed-list { background: #29292c; border: 1px solid #3b3b3f; border-radius: 13px; }
+.tools-grid { margin-bottom: 16px; }
+.grid-tool { min-height: 58px; border: 1px solid #3b3b3f; border-radius: 11px; background: #29292c; color: #e9e6eb; }
+.grid-tool:hover, .grid-tool:focus-visible { background: #343438; border-color: var(--ccnux-accent); }
+.grid-tool image { color: var(--ccnux-accent); }
+.grid-tool-label { font-size: 12px; font-weight: 700; }
+.action-list row { min-height: 44px; border-bottom: 1px solid #3b3b3f; }
+.action-list row:last-child { border-bottom: none; }
