@@ -64,6 +64,10 @@ CCNux currently manages pre-installed or portable versions of Adobe applications
 3. **Win32 Memory & Subsystem Optimizations**
    - Enabled `WINE_LARGE_ADDRESS_AWARE = 1`, `WINEESYNC = 1`, `WINEFSYNC = 1`, and `STAGING_WRITECOPY = 1` for high-throughput memory operations during 3D composition rendering.
    - Isolated native `dwrite.dll` text rendering (`dwrite=n,b`) to prevent font engine crashes in 3D text layers.
+4. **CUDA Acceleration & UI Rendering Optimizations**
+   - Injected `EnableCUDA=true` and `CUDA_VISIBLE_DEVICES=0` to force Mercury Playback Engine GPU acceleration natively on Linux NVIDIA drivers.
+   - Disabled UI Hardware Acceleration (`Display.EnableUIHardwareAcceleration=false`) and forced native Windows GDI+ (`gdiplus=n,b`) to completely bypass `d2d1` OpenGL translation bottlenecks, resulting in native-level UI dragging/panel responsiveness.
+   - Injected Multi-Frame Rendering (MFR) enablement into `Debug Database.txt` for aggressive multi-core CPU rendering on Linux threads.
 </details>
 
 <details>
