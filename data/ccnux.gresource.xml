@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/ccnux/CreativeCloudNux">
+    <file alias="data/style.css">data/style.css</file>
+    <file alias="icons/after-effects.png">assets/icons/after-effects.png</file>
+    <file alias="icons/premiere-pro.png">assets/icons/premiere-pro.png</file>
+    <file alias="icons/illustrator.png">assets/icons/illustrator.png</file>
+    <file alias="icons/photoshop.png">assets/icons/photoshop.png</file>
+    <file alias="icons/additional.png">assets/icons/additional.png</file>
+    <file alias="icons/ccnux.png">assets/icons/ccnux.png</file>
+  </gresource>
+</gresources>
