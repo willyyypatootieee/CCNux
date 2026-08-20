@@ -18,8 +18,10 @@ public class IcuAliasManager : Object {
             }
             if (unversioned.query_exists (cancellable) && versioned != null) continue;
             try {
-                if (!unversioned.query_exists (cancellable)) unversioned.make_symbolic_link (versioned.get_basename (), cancellable);
-                else versioned.make_symbolic_link (unversioned.get_basename (), cancellable);
+                if (!unversioned.query_exists (cancellable) && versioned != null)
+                    unversioned.make_symbolic_link (versioned.get_basename (), cancellable);
+                else if (unversioned.query_exists (cancellable) && versioned != null)
+                    versioned.make_symbolic_link (unversioned.get_basename (), cancellable);
             } catch (Error e) { log ("Could not create " + family + " alias in system32: " + e.message); }
         }
     }

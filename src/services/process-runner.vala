@@ -10,12 +10,49 @@ public class ProcessRunner : Object {
         if (File.new_for_path (runner_bin).query_exists ()) launcher.setenv ("PATH", runner_bin + ":" + Environment.get_variable ("PATH"), true);
         if (cwd != null) launcher.set_cwd (cwd);
         if (prefix != null) launcher.setenv ("WINEPREFIX", prefix.get_path (), true);
-        if (wine_dll_overrides != "") launcher.setenv ("WINEDLLOVERRIDES", wine_dll_overrides, true);
+
+        // GPU offload & Vulkan ICD setup
+        bool is_nvidia = File.new_for_path ("/dev/nvidia0").query_exists () || File.new_for_path ("/dev/nvidiactl").query_exists ();
+        if (is_nvidia) {
+            launcher.setenv ("__VK_LAYER_NV_optimus", "NVIDIA_only", true);
+            launcher.setenv ("CUDA_VISIBLE_DEVICES", "0", true);
+            launcher.setenv ("NVIDIA_DRIVER_CAPABILITIES", "all", true);
+            launcher.setenv ("DRI_PRIME", "1", true);
+            launcher.setenv ("DXVK_NVAPI", "1", true);
+            launcher.setenv ("DXVK_ENABLE_NVAPI", "1", true);
+            launcher.setenv ("GPU_FORCE_64BIT_PTR", "1", true);
+            launcher.setenv ("DVA_FORCE_CPU_ACCL", "0", true);
+            string[] nvidia_icds = {
+                "/usr/share/vulkan/icd.d/nvidia_icd.json",
+                "/usr/share/vulkan/icd.d/nvidia_icd.x86_64.json",
+                "/etc/vulkan/icd.d/nvidia_icd.json",
+                "/usr/lib/vulkan/nvidia_icd.json",
+                "/usr/lib/x86_64-linux-gnu/vulkan/icd.d/nvidia_icd.json"
+            };
+            foreach (string path in nvidia_icds) {
+                if (File.new_for_path (path).query_exists ()) {
+                    launcher.setenv ("VK_ICD_FILENAMES", path, true);
+                    break;
+                }
+            }
+        }
+
+        string overrides = wine_dll_overrides;
+        if (overrides == "") {
+            overrides = "d3d12=n,b;msxml3,msxml6,atmlib,concrt140,msvcp140,msvcp140_1,msvcp140_2," +
+                        "ucrtbase,vcruntime140,vcruntime140_1,vcomp140=n,b;gdiplus=n,b;gdi32=b;dwrite=n,b;" +
+                        "wbemprox,wbemdisp,wbemloc,netprofm,iccvid,ir50_32,iyuv_32;" +
+                        "nvapi,nvapi64,nvcuda,nvcuvid,nvencodeapi,nvencodeapi64,nvofapi64,nvoptix=n;" +
+                        "d3d11,dxgi,d3d10core,d2d1,d3d9=n,b";
+        }
+        launcher.setenv ("WINEDLLOVERRIDES", overrides, true);
+
         if (use_portal) launcher.setenv ("WINE_USE_PORTAL", "1", true);
         if (prefix != null) {
             launcher.setenv (CcnuxConfig.ENV_WINEESYNC, "1", true);
             launcher.setenv (CcnuxConfig.ENV_WINEFSYNC, "1", true);
             launcher.setenv (CcnuxConfig.ENV_STAGING_WRITECOPY, "1", true);
+            launcher.setenv ("STAGING_SHARED_MEMORY", "1", true);
             launcher.setenv (CcnuxConfig.ENV_LARGE_ADDRESS_AWARE, "1", true);
             launcher.setenv (CcnuxConfig.ENV_DXVK_LOG_LEVEL, "error", true);
             launcher.setenv (CcnuxConfig.ENV_DXVK_STATE_CACHE, "1", true);
