@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Adobe Photoshop 2024
+Comment=Raster graphics editor
+Exec=ccnux --run photoshop-2024 %U
+Icon=com.ccnux.photoshop
+Terminal=false
+Type=Application
+Categories=Graphics;RasterGraphics;
+MimeType=image/vnd.adobe.photoshop;
+StartupWMClass=photoshop.exe
