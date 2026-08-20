@@ -57,6 +57,17 @@ public class PreferencesDialog : Adw.PreferencesDialog {
         install.activatable_widget = install_btn;
         fonts.add (install);
 
+        var ae = new Adw.PreferencesGroup ();
+        ae.title = "After Effects";
+        ae.description = "Specific overrides for Adobe After Effects.";
+        
+        var hw_ui = new Adw.SwitchRow ();
+        hw_ui.title = "Hardware UI Acceleration";
+        hw_ui.subtitle = "Enable for experimental CEP and ScriptUI panel support (may cause UI glitches depending on driver).";
+        hw_ui.set_active (settings.ae_hardware_ui);
+        hw_ui.notify["active"].connect (() => { settings.ae_hardware_ui = hw_ui.get_active (); });
+        ae.add (hw_ui);
+
         var open = new Adw.ActionRow ();
         open.title = "Open font folder";
         open.subtitle = "Fonts here synchronize to every Adobe product";
@@ -69,6 +80,7 @@ public class PreferencesDialog : Adw.PreferencesDialog {
         var page = new Adw.PreferencesPage ();
         page.add (general);
         page.add (fonts);
+        page.add (ae);
         add (page);
     }
 }
