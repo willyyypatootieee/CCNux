@@ -28,10 +28,11 @@ public class ProductPage : Gtk.Box {
         add_css_class ("product-page");
         add_css_class ("product-" + product.id);
 
-        var hero = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 16);
+        // 1. Rich Hero Header Card
+        var hero = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 18);
         hero.add_css_class ("product-hero");
         var product_icon = new Gtk.Image.from_resource (ProductIcons.resource_for (product.id));
-        product_icon.pixel_size = 52;
+        product_icon.pixel_size = 58;
         product_icon.add_css_class ("hero-icon");
         hero.append (product_icon);
 
@@ -47,27 +48,45 @@ public class ProductPage : Gtk.Box {
         description.add_css_class ("page-description");
         hero_copy.append (description);
         hero.append (hero_copy);
+
         status_badge = new Gtk.Label ("Not installed");
         status_badge.add_css_class ("status-badge");
         status_badge.valign = Gtk.Align.CENTER;
         hero.append (status_badge);
         append (hero);
 
-        var btn_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+        // 2. Prominent Action Bar
+        var btn_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
         btn_box.halign = Gtk.Align.START;
-        btn_box.margin_bottom = 16;
+        btn_box.margin_top = 12;
+        btn_box.margin_bottom = 18;
+
+        run_btn = new Gtk.Button ();
+        run_btn.add_css_class ("suggested-action");
+        run_btn.add_css_class ("action-button");
+        run_btn.add_css_class ("launch-button");
+        run_btn.sensitive = false;
+
+        var run_content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        var play_icon = new Gtk.Image.from_icon_name ("media-playback-start-symbolic");
+        play_icon.pixel_size = 18;
+        run_content.append (play_icon);
+        var run_label = new Gtk.Label ("Launch " + product.name);
+        run_label.add_css_class ("launch-label");
+        run_content.append (run_label);
+        run_btn.set_child (run_content);
+        run_btn.clicked.connect (() => run_requested ());
+        btn_box.append (run_btn);
+
         install_btn = new Gtk.Button.with_label ("Install archive");
-        install_btn.add_css_class ("suggested-action");
         install_btn.add_css_class ("action-button");
         install_btn.sensitive = available;
         install_btn.clicked.connect (() => install_requested ());
-        run_btn = new Gtk.Button.with_label ("Run");
-        run_btn.add_css_class ("action-button");
-        run_btn.sensitive = false;
-        run_btn.clicked.connect (() => run_requested ());
-        btn_box.append (run_btn);
+        btn_box.append (install_btn);
+
         append (btn_box);
 
+        // 3. Product Overview
         var overview = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
         overview.add_css_class ("product-overview");
         var overview_title = new Gtk.Label ("About " + product.name);
@@ -82,6 +101,7 @@ public class ProductPage : Gtk.Box {
         overview.append (overview_copy);
         append (overview);
 
+        // 4. Details Grid
         var details = new Gtk.Grid ();
         details.column_spacing = 10;
         details.row_spacing = 10;
@@ -93,57 +113,47 @@ public class ProductPage : Gtk.Box {
         details.attach (build_info_card ("YOUR FILES", "Projects stay in your folders; CCNux manages the app runtime"), 1, 1, 1, 1);
         append (details);
 
-        var tools_label = new Gtk.Label ("Tools & locations");
+        // 5. Tools & Locations Grid
+        var tools_label = new Gtk.Label ("TOOLS & LOCATIONS");
         tools_label.halign = Gtk.Align.START;
-        tools_label.margin_bottom = 4;
+        tools_label.margin_bottom = 8;
         tools_label.add_css_class ("caption-heading");
         append (tools_label);
+
         var tools = new Gtk.Grid ();
         tools.add_css_class ("tools-grid");
         tools.column_spacing = 10;
         tools.row_spacing = 10;
-        tools.margin_bottom = 16;
-        add_grid_tool (tools, "Run diagnostics", "dialog-information-symbolic", () => diagnostics_requested (), 0, 0);
-        if (product.id == "illustrator-2024") add_grid_tool (tools, "Repair Illustrator runtime", "emblem-system-symbolic", () => repair_requested (), 1, 4);
-        if (product.id == "premiere-pro-2024") add_grid_tool (tools, "Import Adobe Common runtime", "folder-download-symbolic", () => adobe_common_import_requested (), 1, 4);
-        add_grid_tool (tools, "Browse app files", "folder-open-symbolic", () => browse_requested ("app"), 1, 0);
-        add_grid_tool (tools, "Browse CEP extensions", "folder-open-symbolic", () => browse_requested ("cep"), 0, 1);
+        tools.margin_bottom = 20;
+
+        add_grid_tool (tools, "Run Diagnostics", "dialog-information-symbolic", () => diagnostics_requested (), 0, 0);
+        if (product.id == "illustrator-2024") add_grid_tool (tools, "Repair Illustrator Runtime", "emblem-system-symbolic", () => repair_requested (), 1, 4);
+        if (product.id == "premiere-pro-2024") add_grid_tool (tools, "Import Adobe Common Runtime", "folder-download-symbolic", () => adobe_common_import_requested (), 1, 4);
+        add_grid_tool (tools, "Browse App Files", "folder-open-symbolic", () => browse_requested ("app"), 1, 0);
+        add_grid_tool (tools, "Browse CEP Extensions", "folder-open-symbolic", () => browse_requested ("cep"), 0, 1);
         add_grid_tool (tools, "Browse Plug-ins", "folder-open-symbolic", () => browse_requested ("plugins"), 1, 1);
         add_grid_tool (tools, "Browse ScriptUI Panels", "folder-open-symbolic", () => browse_requested ("panels"), 0, 2);
-        add_grid_tool (tools, "Install plug-in", "list-add-symbolic", () => extension_requested (false), 1, 2, available);
-        add_grid_tool (tools, "Install ScriptUI panel", "list-add-symbolic", () => extension_requested (true), 0, 3, available);
-        add_grid_tool (tools, "Install fonts", "font-x-generic-symbolic", () => font_install_requested (), 1, 3);
-        add_grid_tool (tools, "Open font folder", "folder-open-symbolic", () => font_folder_requested (), 0, 4);
+        add_grid_tool (tools, "Install Plug-in", "list-add-symbolic", () => extension_requested (false), 1, 2, available);
+        add_grid_tool (tools, "Install ScriptUI Panel", "list-add-symbolic", () => extension_requested (true), 0, 3, available);
+        add_grid_tool (tools, "Install Fonts", "font-x-generic-symbolic", () => font_install_requested (), 1, 3);
+        add_grid_tool (tools, "Open Font Folder", "folder-open-symbolic", () => font_folder_requested (), 0, 4);
         append (tools);
 
-        var danger_label = new Gtk.Label ("Danger zone");
+        // 6. Danger Zone Section
+        var danger_label = new Gtk.Label ("DANGER ZONE");
         danger_label.halign = Gtk.Align.START;
-        danger_label.margin_bottom = 4;
+        danger_label.margin_bottom = 8;
         danger_label.add_css_class ("caption-heading-danger");
         append (danger_label);
+
         var danger = new Gtk.ListBox ();
         danger.selection_mode = Gtk.SelectionMode.NONE;
         danger.add_css_class ("boxed-list");
         danger.add_css_class ("action-list");
-        kill_row = add_tool (danger, "Force quit", "process-stop-symbolic", () => kill_requested ());
-        uninstall_row = add_tool (danger, "Uninstall", "user-trash-symbolic", () => uninstall_requested ());
+        danger.add_css_class ("danger-list");
+        kill_row = add_tool (danger, "Force Quit Process", "process-stop-symbolic", () => kill_requested ());
+        uninstall_row = add_tool (danger, "Uninstall Product", "user-trash-symbolic", () => uninstall_requested ());
         append (danger);
-
-        var install_heading = new Gtk.Label ("INSTALLATION");
-        install_heading.halign = Gtk.Align.START;
-        install_heading.margin_top = 18;
-        install_heading.margin_bottom = 6;
-        install_heading.add_css_class ("caption-heading");
-        append (install_heading);
-        var install_footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
-        install_footer.add_css_class ("install-footer");
-        var install_copy = new Gtk.Label ("Replace the current archive-backed installation");
-        install_copy.halign = Gtk.Align.START;
-        install_copy.hexpand = true;
-        install_copy.add_css_class ("install-copy");
-        install_footer.append (install_copy);
-        install_footer.append (install_btn);
-        append (install_footer);
     }
 
     public void set_busy (bool busy) {
@@ -191,9 +201,11 @@ public class ProductPage : Gtk.Box {
         button.add_css_class ("grid-tool");
         button.sensitive = sensitive;
         button.hexpand = true;
-        var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+        var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
         content.halign = Gtk.Align.CENTER;
-        content.append (new Gtk.Image.from_icon_name (icon_name));
+        var img = new Gtk.Image.from_icon_name (icon_name);
+        img.pixel_size = 18;
+        content.append (img);
         var text = new Gtk.Label (label);
         text.add_css_class ("grid-tool-label");
         content.append (text);
@@ -241,4 +253,3 @@ public class ProductPage : Gtk.Box {
         return "Retouching, layers, exports";
     }
 }
-

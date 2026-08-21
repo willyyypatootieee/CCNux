@@ -6,5 +6,5 @@ Icon=com.ccnux.illustrator
 Terminal=false
 Type=Application
 Categories=Graphics;VectorGraphics;
-MimeType=application/illustrator;
+MimeType=application/illustrator;image/eps;image/x-eps;application/eps;application/x-eps;application/postscript;image/svg+xml;image/svg+xml-compressed;application/pdf;application/x-pdf;
 StartupWMClass=illustrator.exe
