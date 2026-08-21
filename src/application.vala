@@ -7,7 +7,7 @@ public class CcnuxApplication : Adw.Application {
     };
 
     public CcnuxApplication () {
-        Object (application_id: "com.ccnux.creativecloudnux", flags: ApplicationFlags.HANDLES_OPEN);
+        Object (application_id: "com.ccnux.creativecloudnux", flags: ApplicationFlags.HANDLES_OPEN | ApplicationFlags.HANDLES_COMMAND_LINE);
         add_main_option_entries (option_entries);
     }
 
@@ -18,7 +18,7 @@ public class CcnuxApplication : Adw.Application {
         Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
 
-    protected override void activate () {
+    private void ensure_window () {
         if (window == null) {
             window = new MainWindow (this);
             var preferences = new SimpleAction ("preferences", null);
@@ -28,6 +28,10 @@ public class CcnuxApplication : Adw.Application {
             about.activate.connect (() => window.show_about ());
             add_action (about);
         }
+    }
+
+    protected override void activate () {
+        ensure_window ();
         window.present ();
     }
 
@@ -39,15 +43,28 @@ public class CcnuxApplication : Adw.Application {
             if (value != null) run = value.get_string ();
         }
         string[] args = command_line.get_arguments ();
-        string? file_path = args.length > 1 ? args[1] : null;
-        activate ();
-        if (run != null) window.run_product (run);
-        else if (file_path != null) {
-            if (file_path.has_prefix ("misterhorse://")) {
-                window.handle_url (file_path);
-            } else {
-                window.open_project (file_path);
+        string? file_path = null;
+        for (int i = 1; i < args.length; i++) {
+            string arg = args[i];
+            if (!arg.has_prefix ("-") && arg != run) {
+                file_path = arg;
+                break;
             }
+        }
+        if (run != null || file_path != null) {
+            ensure_window ();
+            if (run != null) {
+                window.run_product (run, file_path);
+            } else if (file_path != null) {
+                if (file_path.has_prefix ("misterhorse://")) {
+                    window.present ();
+                    window.handle_url (file_path);
+                } else {
+                    window.open_project (file_path);
+                }
+            }
+        } else {
+            activate ();
         }
         return 0;
     }
