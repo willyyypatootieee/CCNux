@@ -42,14 +42,14 @@ public class WineRuntimeConfigurator : Object {
     }
 
     private async void ensure_core_assets (Cancellable? cancellable) throws Error {
-        var dlls_dir = File.new_for_path (CcnuxConfig.get_assets_dir () + "/dlls");
-        if (dlls_dir.query_exists ()) return;
+        var core_dir = File.new_for_path (CcnuxConfig.get_assets_dir () + "/ccnux-core-assets");
+        if (core_dir.query_exists ()) return;
 
-        log ("Core assets not found locally. Downloading from GitHub Releases...");
-        var archive = File.new_build_filename (Environment.get_user_data_dir (), "ccnux", "runner", "assets", "ccnux-core-assets.tar.gz");
+        log ("Core assets not found locally. Downloading ccnux-core-assets-newest.zip from GitHub Releases...");
+        var archive = File.new_build_filename (Environment.get_user_data_dir (), "ccnux", "runner", "assets", "ccnux-core-assets-newest.zip");
         if (!archive.get_parent ().query_exists ()) archive.get_parent ().make_directory_with_parents (null);
         
-        string url = "https://github.com/willyyypatootieee/CCNux/releases/download/Optimization/ccnux-core-assets.tar.gz";
+        string url = "https://github.com/willyyypatootieee/CCNux/releases/latest/download/ccnux-core-assets-newest.zip";
         yield downloads.download (url, archive, cancellable);
         
         log ("Extracting core assets...");
@@ -86,6 +86,14 @@ public class WineRuntimeConfigurator : Object {
             log ("Installing fonts into " + font_dest.get_path ());
             if (!font_dest.query_exists (cancellable)) font_dest.make_directory_with_parents (cancellable);
             yield helper.copy_tree (fonts, font_dest, cancellable);
+        }
+        var core_fonts = File.new_for_path (asset ("adobe-core-runtime/fonts/AdobeCleanUX"));
+        if (!core_fonts.query_exists ()) core_fonts = File.new_for_path (asset ("ccnux-core-assets/fonts/AdobeCleanUX"));
+        if (!core_fonts.query_exists ()) core_fonts = File.new_for_path (asset ("adobeillustrator-core/AdobeCleanUX"));
+        if (core_fonts.query_exists ()) {
+            log ("Installing AdobeCleanUX core fonts into " + font_dest.get_path ());
+            if (!font_dest.query_exists (cancellable)) font_dest.make_directory_with_parents (cancellable);
+            yield helper.copy_tree (core_fonts, font_dest, cancellable);
         }
         var system32 = prefix.root.get_child ("drive_c/windows/system32");
         log ("Preparing system DLL directory " + system32.get_path ());

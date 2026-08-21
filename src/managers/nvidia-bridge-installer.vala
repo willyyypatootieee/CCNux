@@ -1,3 +1,12 @@
+public struct GpuInfo {
+    public string vendor_id_hex;
+    public string device_id_hex;
+    public uint32 vendor_id_dec;
+    public uint32 device_id_dec;
+    public string gpu_name;
+    public int vram_mb;
+}
+
 // Encapsulates NVIDIA GPU detection and library bridging for Wine prefixes.
 public class NvidiaBridgeInstaller : Object {
     public signal void log (string message);
@@ -18,6 +27,81 @@ public class NvidiaBridgeInstaller : Object {
 
     public bool is_nvidia_present () {
         return Environment.find_program_in_path ("nvidia-smi") != null || File.new_for_path ("/proc/driver/nvidia").query_exists ();
+    }
+
+    public GpuInfo detect_gpu_info () {
+        GpuInfo info = { "", "", 0, 0, "NVIDIA Graphics Device", 0 };
+
+        // 1. Detect PCI Vendor ID and Device ID from sysfs
+        try {
+            var drm_dir = File.new_for_path ("/sys/class/drm");
+            if (drm_dir.query_exists ()) {
+                var enumerator = drm_dir.enumerate_children ("standard::name", FileQueryInfoFlags.NONE);
+                FileInfo? file_info;
+                while ((file_info = enumerator.next_file ()) != null) {
+                    string name = file_info.get_name ();
+                    if (name.has_prefix ("card") && !name.contains ("-")) {
+                        var vendor_file = drm_dir.get_child (name).get_child ("device/vendor");
+                        var device_file = drm_dir.get_child (name).get_child ("device/device");
+                        if (vendor_file.query_exists () && device_file.query_exists ()) {
+                            uint8[] vdata, ddata;
+                            vendor_file.load_contents (null, out vdata, null);
+                            device_file.load_contents (null, out ddata, null);
+                            string vstr = ((string) vdata).strip ().down ().replace ("0x", "");
+                            string dstr = ((string) ddata).strip ().down ().replace ("0x", "");
+                            if (vstr == "10de" || info.vendor_id_hex == "") {
+                                info.vendor_id_hex = vstr;
+                                info.device_id_hex = dstr;
+                                info.vendor_id_dec = (uint32) int64.parse ("0x" + vstr);
+                                info.device_id_dec = (uint32) int64.parse ("0x" + dstr);
+                                if (vstr == "10de") break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Error e) { }
+
+        // 2. Query GPU Name and VRAM Total via nvidia-smi if available
+        if (Environment.find_program_in_path ("nvidia-smi") != null) {
+            try {
+                int status;
+                string stdout_str, stderr_str;
+                Process.spawn_command_line_sync (
+                    "nvidia-smi --query-gpu=gpu_name,memory.total --format=csv,noheader,nounits",
+                    out stdout_str, out stderr_str, out status);
+                if (status == 0 && stdout_str != null && stdout_str.contains (",")) {
+                    string[] parts = stdout_str.strip ().split (",");
+                    if (parts.length >= 2) {
+                        info.gpu_name = parts[0].strip ();
+                        int parsed_vram = int.parse (parts[1].strip ());
+                        if (parsed_vram > 0) info.vram_mb = parsed_vram;
+                    }
+                }
+            } catch (Error e) { }
+        }
+        if (info.vram_mb == 0) {
+            try {
+                var meminfo = File.new_for_path ("/proc/meminfo");
+                if (meminfo.query_exists ()) {
+                    uint8[] mdata;
+                    meminfo.load_contents (null, out mdata, null);
+                    string mstr = (string) mdata;
+                    foreach (string line in mstr.split ("\n")) {
+                        if (line.has_prefix ("MemTotal:")) {
+                            string[] parts = line.split (":");
+                            if (parts.length >= 2) {
+                                int kb = int.parse (parts[1].replace ("kB", "").strip ());
+                                info.vram_mb = (kb / 1024) / 2;
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (Error e) { }
+            if (info.vram_mb == 0) info.vram_mb = 4096;
+        }
+        return info;
     }
 
     private string asset (string name) {

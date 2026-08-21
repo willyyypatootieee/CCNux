@@ -162,6 +162,28 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
     protected bool registry_contains_msxml3 () {
         return new WineRuntimeConfigurator (prefix, runner, registry, archives, downloads, font_sync).registry_contains_msxml3 ();
     }
+    public virtual async void repair (Cancellable? cancellable) throws Error {
+        progress (0.1, "Initializing automated repair for " + product.name + "...");
+        
+        // 1. Ensure Wine Prefix
+        progress (0.25, "Verifying Wine prefix environment...");
+        prefix.ensure ();
+        
+        // 2. Run Product Optimizer pre-launch hooks
+        progress (0.50, "Applying product optimization & registry overrides...");
+        yield before_launch (cancellable);
+        
+        // 3. Sync Fonts
+        progress (0.75, "Rebuilding host-to-Wine font bridge...");
+        yield font_sync.sync_all ();
+        
+        // 4. PlayerDebugMode
+        progress (0.90, "Enabling PlayerDebugMode for CEP/UXP panels...");
+        yield new PluginRoutingService ().enable_player_debug_mode (cancellable);
+        
+        progress (1.0, "Automated repair completed successfully for " + product.name);
+    }
+
     protected bool nvidia_present () {
         return new NvidiaBridgeInstaller (prefix, downloads, archives, runner, asset ("")).is_nvidia_present ();
     }

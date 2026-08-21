@@ -22,6 +22,7 @@ public class AdobeProductLauncher : Object {
     ) throws Error {
         if (executable == null) throw new IOError.NOT_FOUND (product.name + " is not installed");
         log ("Using Wine prefix: " + prefix.root.get_path ());
+        runner.sync_display_backend (display_backend);
         runner.prefer_nvidia = prefer_nvidia;
         runner.wine_dll_overrides = wine_dll_overrides;
 
