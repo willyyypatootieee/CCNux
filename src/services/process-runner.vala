@@ -11,31 +11,12 @@ public class ProcessRunner : Object {
         if (cwd != null) launcher.set_cwd (cwd);
         if (prefix != null) launcher.setenv ("WINEPREFIX", prefix.get_path (), true);
 
-        // GPU offload & Vulkan ICD setup
-        bool is_nvidia = File.new_for_path ("/dev/nvidia0").query_exists () || File.new_for_path ("/dev/nvidiactl").query_exists ();
-        if (is_nvidia) {
-            launcher.setenv ("__VK_LAYER_NV_optimus", "NVIDIA_only", true);
-            launcher.setenv ("CUDA_VISIBLE_DEVICES", "0", true);
-            launcher.setenv ("NVIDIA_DRIVER_CAPABILITIES", "all", true);
-            launcher.setenv ("DRI_PRIME", "1", true);
-            launcher.setenv ("DXVK_NVAPI", "1", true);
-            launcher.setenv ("DXVK_ENABLE_NVAPI", "1", true);
-            launcher.setenv ("GPU_FORCE_64BIT_PTR", "1", true);
-            launcher.setenv ("DVA_FORCE_CPU_ACCL", "0", true);
-            string[] nvidia_icds = {
-                "/usr/share/vulkan/icd.d/nvidia_icd.json",
-                "/usr/share/vulkan/icd.d/nvidia_icd.x86_64.json",
-                "/etc/vulkan/icd.d/nvidia_icd.json",
-                "/usr/lib/vulkan/nvidia_icd.json",
-                "/usr/lib/x86_64-linux-gnu/vulkan/icd.d/nvidia_icd.json"
-            };
-            foreach (string path in nvidia_icds) {
-                if (File.new_for_path (path).query_exists ()) {
-                    launcher.setenv ("VK_ICD_FILENAMES", path, true);
-                    break;
-                }
-            }
-        }
+        // Apply Global Performance & Stability Optimizations
+        GlobalOptimizer.apply_environment (launcher, display_backend == "Xwayland");
+
+        launcher.setenv ("LIBGL_ALWAYS_SOFTWARE", "1", true);
+        launcher.setenv ("GALLIUM_DRIVER", "llvmpipe", true);
+        launcher.setenv ("WINEDLLPATH", "/tmp", true);
 
         string overrides = wine_dll_overrides;
         if (overrides == "") {
@@ -43,26 +24,11 @@ public class ProcessRunner : Object {
                         "ucrtbase,vcruntime140,vcruntime140_1,vcomp140=n,b;gdiplus=n,b;gdi32=b;dwrite=n,b;" +
                         "wbemprox,wbemdisp,wbemloc,netprofm,iccvid,ir50_32,iyuv_32;" +
                         "nvapi,nvapi64,nvcuda,nvcuvid,nvencodeapi,nvencodeapi64,nvofapi64,nvoptix=n;" +
-                        "d3d11,dxgi,d3d10core,d2d1,d3d9=n,b";
+                        "d3d11,dxgi,d3d10core,d3d9=n,b;d2d1=b,n";
         }
         launcher.setenv ("WINEDLLOVERRIDES", overrides, true);
 
         if (use_portal) launcher.setenv ("WINE_USE_PORTAL", "1", true);
-        if (prefix != null) {
-            launcher.setenv (CcnuxConfig.ENV_WINEESYNC, "1", true);
-            launcher.setenv (CcnuxConfig.ENV_WINEFSYNC, "1", true);
-            launcher.setenv (CcnuxConfig.ENV_STAGING_WRITECOPY, "1", true);
-            launcher.setenv ("STAGING_SHARED_MEMORY", "1", true);
-            launcher.setenv (CcnuxConfig.ENV_LARGE_ADDRESS_AWARE, "1", true);
-            launcher.setenv (CcnuxConfig.ENV_DXVK_LOG_LEVEL, "error", true);
-            launcher.setenv (CcnuxConfig.ENV_DXVK_STATE_CACHE, "1", true);
-            launcher.setenv (CcnuxConfig.ENV_DXVK_ASYNC, "1", true);
-        }
-        if (display_backend == "Xwayland") {
-            launcher.setenv (CcnuxConfig.ENV_GL_SYNC_TO_VBLANK, "0", true);
-            launcher.setenv (CcnuxConfig.ENV_VBLANK_MODE, "0", true);
-        }
-        launcher.setenv (CcnuxConfig.ENV_WINEDEBUG, "-all", true);
         return launcher;
     }
 
@@ -72,7 +38,11 @@ public class ProcessRunner : Object {
         if (!File.new_for_path (bundled_wine).query_exists ()) return argv;
         string[] resolved = {};
         foreach (string argument in argv) resolved += argument;
-        string[] wine_commands = {CcnuxConfig.CMD_WINE, CcnuxConfig.CMD_WINEBOOT, CcnuxConfig.CMD_WINESERVER, CcnuxConfig.CMD_WINECFG, CcnuxConfig.CMD_WINEPATH, CcnuxConfig.CMD_WINECONSOLE, CcnuxConfig.CMD_REGEDIT};
+        string[] wine_commands = {
+            CcnuxConfig.CMD_WINE, CcnuxConfig.CMD_WINEBOOT, CcnuxConfig.CMD_WINESERVER,
+            CcnuxConfig.CMD_WINECFG, CcnuxConfig.CMD_WINEPATH, CcnuxConfig.CMD_WINECONSOLE,
+            CcnuxConfig.CMD_REGEDIT, "msiexec", "reg"
+        };
         foreach (string command in wine_commands)
             if (resolved.length > 0 && resolved[0] == command) resolved[0] = runner_bin + "/" + command;
         return resolved;
