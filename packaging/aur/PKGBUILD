@@ -1,0 +1,55 @@
+# Maintainer: Willy <blueplayz26@gmail.com>
+
+pkgname=ccnux-git
+_pkgname=ccnux
+pkgver=0.8.4.r0.g6e87aa0
+pkgrel=1
+pkgdesc="Next-Generation Native GTK4 Linux Manager for Adobe Creative Cloud Suite"
+arch=('x86_64')
+url="https://github.com/willyyypatootieee/CCNux"
+license=('GPL-3.0-or-later')
+depends=(
+    'gtk4'
+    'libadwaita'
+    'libsoup3'
+    'wine-staging'
+    'cabextract'
+    'vulkan-icd-loader'
+    'hicolor-icon-theme'
+)
+makedepends=(
+    'git'
+    'meson'
+    'ninja'
+    'vala'
+    'gcc'
+    'pkgconf'
+)
+optdepends=(
+    'dxvk-bin: Direct3D 11/10 Vulkan hardware acceleration'
+    'nvidia-utils: CUDA & OptiX acceleration for Premiere Pro / After Effects'
+    'xorg-xwayland: Seamless Xwayland display integration'
+)
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+source=("git+https://github.com/willyyypatootieee/CCNux.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "${srcdir}/CCNux"
+    git describe --long --tags --abbrev=7 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
+    printf "0.8.4.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build() {
+    arch-meson CCNux build
+    meson compile -C build
+}
+
+check() {
+    meson test -C build --print-errorlogs || true
+}
+
+package() {
+    DESTDIR="${pkgdir}" meson install -C build
+}

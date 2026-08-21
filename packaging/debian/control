@@ -1,0 +1,17 @@
+Source: ccnux
+Section: utils
+Priority: optional
+Maintainer: Willy <blueplayz26@gmail.com>
+Build-Depends: debhelper-compat (= 13), meson, valac, gcc, pkg-config, libgtk-4-dev, libadwaita-1-dev, libsoup-3.0-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/willyyypatootieee/CCNux
+
+Package: ccnux
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgtk-4-1, libadwaita-1-0, libsoup-3.0-0, wine, cabextract
+Description: Native GTK4 Linux Manager for Adobe Creative Cloud Suite
+ CCNux provides a native GTK4/Libadwaita desktop interface for managing, configuring,
+ and accelerating Adobe 2024 applications on Linux.
+ .
+ Features include GPU auto-detection, OpenCL dGPU isolation, DXVK Vulkan GPL shader caching,
+ modular plugin routing, and live font synchronization.
