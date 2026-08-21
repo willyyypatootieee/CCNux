@@ -3,16 +3,11 @@ public class MisterHorseInstaller : AdobeProductInstaller {
         base (product);
     }
 
-    public override string product_folder_name { get { return "ProductManager"; } }
-    public override string[] executable_candidates { owned get { return {"ProductManager.exe"}; } }
+    public override string product_folder_name { get { return "Mister Horse Product Manager"; } }
+    public override string[] executable_candidates { owned get { return {"ProductManager.exe", "Mister Horse Product Manager.exe"}; } }
 
     public override async void install (File archive, Cancellable? cancellable = null) {
         try {
-            // Ignore the user-provided archive (which might be anything if they just clicked it)
-            // But wait, the user is FORCED to select an archive in choose_archive().
-            // That's slightly awkward but acceptable as a hack, or we can just download it.
-            // Actually, we'll download it and use it.
-            
             progress (0.1, "Downloading Mister Horse Product Manager...");
             phase (InstallStep.ACQUIRE_ARCHIVE);
             var configurator = new WineRuntimeConfigurator (prefix, runner, registry, archives, downloads, font_sync);
@@ -29,9 +24,18 @@ public class MisterHorseInstaller : AdobeProductInstaller {
             progress (0.6, "Running installer...");
             phase (InstallStep.EXTRACT);
             
-            // Run the installer interactively (or silently if we can)
-            string[] cmd = {"wine", downloaded_exe.get_path ()};
-            yield runner.run (cmd, cancellable);
+            runner.wine_dll_overrides = "dxgi=b;d2d1=b;d3d11=b;d3d10core=b;dwrite=b;gdiplus=b";
+            string[] cmd = {
+                "wine", downloaded_exe.get_path (),
+                "--no-sandbox",
+                "--disable-gpu",
+                "--disable-gpu-compositing",
+                "--disable-software-rasterizer",
+                "--disable-gpu-sandbox",
+                "--in-process-gpu",
+                "--disable-features=RendererCodeIntegrity,VizDisplayCompositor"
+            };
+            runner.spawn_app (cmd, downloaded_exe.get_parent ().get_path (), false, prefix.root);
 
             progress (0.9, "Finalizing installation...");
             
@@ -55,6 +59,10 @@ public class MisterHorseInstaller : AdobeProductInstaller {
             emit_log ("ERROR: " + e.message);
             finished (false, e.message);
         }
+    }
+
+    protected override async void before_launch (Cancellable? cancellable) throws Error {
+        runner.wine_dll_overrides = "dxgi=b;d2d1=b;d3d11=b;d3d10core=b;dwrite=b;gdiplus=b";
     }
 
     // Since we install directly to the prefix, we override install_location to point there

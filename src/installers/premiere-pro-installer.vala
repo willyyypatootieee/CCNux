@@ -15,15 +15,14 @@ public class PremiereProInstaller : AdobeProductInstaller {
     // vcr.zip is CCNux's supplied vcrun2022-equivalent runtime bundle.
     protected override string[] runtime_archives { owned get { return {"vcr.zip", "msxml3.zip"}; } }
     protected override async void before_launch (Cancellable? cancellable) throws Error {
+        var optimizer = new PremiereProOptimizer (product, prefix, runner);
+        yield optimizer.apply_pre_launch (install_dir, cancellable);
+
         var common = prefix.root.get_child ("drive_c/Program Files/Common Files/Adobe");
         var broker = find_named_file (common, "AdobeIPCBroker.exe");
         if (broker == null)
             throw new IOError.NOT_FOUND ("Premiere is blocked: AdobeIPCBroker.exe is missing from the imported Adobe Common runtime (IPCBox component).");
 
-        // Premiere 2024 requires the 64-bit Windows MSXML pair. Winetricks
-        // installs only the 32-bit variant. First try a mounted Windows
-        // volume; if none is available, fall back to the bundled 64-bit pair
-        // shipped as a runtime asset (verified PE32+ x86-64).
         var system32 = prefix.root.get_child ("drive_c/windows/system32");
         if (!system32.query_exists (cancellable)) system32.make_directory_with_parents (cancellable);
         string[] msxml_files = {"msxml3.dll", "msxml3r.dll"};
@@ -34,8 +33,6 @@ public class PremiereProInstaller : AdobeProductInstaller {
                 emit_log ("Imported native Windows " + name + " for Premiere Pro");
                 continue;
             }
-            // The bundled archive may not be extracted yet when the prefix was
-            // created by another product; pull it out of assets on demand.
             var bundled_dir = prefix.root.get_child ("ccnux-msxml3.zip");
             var bundled_dll = bundled_dir.get_child (name);
             if (!bundled_dll.query_exists ()) {
@@ -48,13 +45,9 @@ public class PremiereProInstaller : AdobeProductInstaller {
             if (bundled_dll.query_exists ()) {
                 bundled_dll.copy (system32.get_child (name), FileCopyFlags.OVERWRITE);
                 emit_log ("Imported bundled 64-bit " + name + " for Premiere Pro");
-            } else {
-                emit_log ("Native Windows " + name + " was not found; retaining existing runtime copy");
             }
         }
 
-        // Ensure the unversioned ICU aliases exist in system32 so Premiere's
-        // sub-processes (Dynamic Link Manager, etc.) can resolve them.
         ensure_icu_aliases (cancellable);
 
         var defaults_marker = prefix.root.get_child (CcnuxConfig.MARKER_PREMIERE_APPDEFAULTS);
@@ -65,27 +58,6 @@ public class PremiereProInstaller : AdobeProductInstaller {
             }
             string? m;
             defaults_marker.replace_contents ("".data, null, false, FileCreateFlags.REPLACE_DESTINATION, out m, cancellable);
-        }
-        // Apply Premiere Pro 2024 stability bypasses and Debug Database overrides.
-        apply_premiere_stability_bypasses ();
-        apply_debug_database_overrides ();
-
-        // Start the broker explicitly as well as allowing CCLibrary to
-        // relaunch it. This avoids Premiere racing a cold shared prefix.
-        int broker_status = yield runner.run ({"wine", "start", "/unix", broker.get_path (), "-relaunchedForIntegrityLevel"}, cancellable, null, false, prefix.root);
-        if (broker_status != 0) emit_log ("AdobeIPCBroker start returned status %d".printf (broker_status));
-        GLib.Timeout.add (2000, () => {
-            before_launch.callback ();
-            return false;
-        });
-        yield;
-        // The Libraries helper is optional, but starting it first avoids the
-        // Premiere startup race when the matching helper is present.
-        var libraries = find_named_file (common, "Creative Cloud Libraries.exe");
-        if (libraries == null) libraries = find_named_file (common, "CCLibrary.exe");
-        if (libraries != null) {
-            int status = yield runner.run ({"wine", "start", "/unix", libraries.get_path ()}, cancellable, null, false, prefix.root);
-            if (status != 0) emit_log ("Creative Cloud Libraries helper exited with status %d".printf (status));
         }
     }
 
@@ -102,13 +74,13 @@ public class PremiereProInstaller : AdobeProductInstaller {
             } catch (Error e) { emit_log ("Could not disable RadialController.dll: " + e.message); }
         }
 
-        // 2. Bypass UXP start screen overlay (com.adobe.ccx.start)
-        var ccx = dir.get_child ("UXP/plugins/com.adobe.ccx.start");
-        if (ccx.query_exists ()) {
+        // 2. Ensure UXP start screen extension is enabled
+        var ccx_disabled = dir.get_child ("UXP/plugins/com.adobe.ccx.start.disabled");
+        if (ccx_disabled.query_exists ()) {
             try {
-                ccx.move (dir.get_child ("UXP/plugins/com.adobe.ccx.start.disabled"), FileCopyFlags.OVERWRITE);
-                emit_log ("Bypassed CCX start screen overlay plugin");
-            } catch (Error e) { emit_log ("Could not disable com.adobe.ccx.start: " + e.message); }
+                ccx_disabled.move (dir.get_child ("UXP/plugins/com.adobe.ccx.start"), FileCopyFlags.OVERWRITE);
+                emit_log ("Restored Premiere Pro CCX start screen extension");
+            } catch (Error e) { }
         }
     }
 

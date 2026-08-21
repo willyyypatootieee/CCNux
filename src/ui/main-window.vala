@@ -23,6 +23,8 @@ public class MainWindow : Adw.ApplicationWindow {
     private Adw.ToastOverlay toast_overlay;
     private HashTable<string, AdobeProductInstaller> installers = new HashTable<string, AdobeProductInstaller> (str_hash, str_equal);
     private ArchiveService extension_archives = new ArchiveService ();
+    private PluginRoutingService plugin_router = new PluginRoutingService ();
+    private PluginManagerPage? plugin_manager_page;
     private SettingsService settings = new SettingsService ();
     private FontSyncService font_sync = new FontSyncService ();
     private ProductDefinition? current_product;
@@ -54,8 +56,13 @@ public class MainWindow : Adw.ApplicationWindow {
         toast_overlay = new Adw.ToastOverlay (); toast_overlay.child = root; set_content (toast_overlay);
 
         var home = new HomePage (catalog);
-        home.product_selected.connect ((id) => { var product = catalog.find (id); if (product != null) { select_product (product); select_sidebar_row (product_index (product) + 2); } });
+        home.product_selected.connect ((id) => { var product = catalog.find (id); if (product != null) { select_product (product); select_sidebar_row (product_index (product) + 3); } });
         stack.add_named (home, "home");
+
+        plugin_manager_page = new PluginManagerPage (plugin_router);
+        plugin_manager_page.log_emitted.connect ((msg) => append_log (msg));
+        plugin_manager_page.toast_requested.connect ((msg) => toast_overlay.add_toast (new Adw.Toast (msg)));
+        stack.add_named (plugin_manager_page, "plugin-manager");
 
         foreach (var product in catalog.all ()) {
             if (product.status != ProductStatus.AVAILABLE) continue;
@@ -82,7 +89,7 @@ public class MainWindow : Adw.ApplicationWindow {
             page_map.insert (product.id, page);
             index++;
         }
-        sidebar.row_selected.connect ((row) => { if (row == null) return; int idx = row.get_index (); if (idx == 0) select_page_home (); else if (idx >= 2) select_product (catalog.all ()[idx - 2]); });
+        sidebar.row_selected.connect ((row) => { if (row == null) return; int idx = row.get_index (); if (idx == 0) select_page_home (); else if (idx == 1) select_page_plugins (); else if (idx >= 3) select_product (catalog.all ()[idx - 3]); });
 
         var keys = new Gtk.EventControllerKey ();
         keys.key_pressed.connect ((keyval, keycode, state) => {
@@ -101,16 +108,20 @@ public class MainWindow : Adw.ApplicationWindow {
     }
 
     public void open_project (string path) {
-        var product = catalog.find ("after-effects-2024");
-        select_product (product);
-        var ae_installer = service_for (product);
-        if (ae_installer != null) {
-            ae_installer.sync_display_backend (settings.display_backend);
-            append_log ("Opening project: " + path);
-            begin_operation ();
-            mark_running (product);
-            ae_installer.run.begin (path, active_cancellable);
+        string lower = path.down ();
+        string target_product_id = "illustrator-2024";
+
+        if (lower.has_suffix (".aep") || lower.has_suffix (".aet") || lower.has_suffix (".mogrt")) {
+            target_product_id = "after-effects-2024";
+        } else if (lower.has_suffix (".prproj")) {
+            target_product_id = "premiere-pro-2024";
+        } else if (lower.has_suffix (".psd") || lower.has_suffix (".psb")) {
+            target_product_id = "photoshop-2024";
+        } else if (lower.has_suffix (".ai") || lower.has_suffix (".eps") || lower.has_suffix (".svg") || lower.has_suffix (".pdf")) {
+            target_product_id = "illustrator-2024";
         }
+
+        run_product (target_product_id, path);
     }
 
     public void handle_url (string url) {
@@ -130,17 +141,17 @@ public class MainWindow : Adw.ApplicationWindow {
         }
     }
 
-    public void run_product (string id) {
+    public void run_product (string id, string? project_path = null) {
         var product = catalog.find (id);
         if (product == null) { append_log ("ERROR: Unknown product id: " + id); return; }
         select_product (product);
-        select_sidebar_row (product_index (product) + 2);
+        select_sidebar_row (product_index (product) + 3);
         if (is_supported () && !busy) {
             set_backend ();
-            append_log ("INFO: Launch requested for " + product.name);
+            append_log ("INFO: Launch requested for " + product.name + (project_path != null ? (" with project " + project_path) : ""));
             begin_operation ();
             mark_running (product);
-            active_installer ().run.begin (null, active_cancellable);
+            active_installer ().run.begin (project_path, active_cancellable);
         } else append_log ("ERROR: %s is not available for launch".printf (product.name));
     }
 
@@ -178,6 +189,12 @@ public class MainWindow : Adw.ApplicationWindow {
         var home_row = build_sidebar_row (home_icon, "Home", true);
         home_row.add_css_class ("home-row");
         list.append (home_row);
+
+        var plugin_icon = new Gtk.Image.from_icon_name ("extension-symbolic");
+        plugin_icon.pixel_size = 16;
+        var plugin_row = build_sidebar_row (plugin_icon, "Plugins & Extensions", true);
+        plugin_row.add_css_class ("product-row");
+        list.append (plugin_row);
 
         var section = new Gtk.ListBoxRow ();
         section.set_selectable (false);
@@ -228,8 +245,15 @@ public class MainWindow : Adw.ApplicationWindow {
         log_view = new Gtk.TextView.with_buffer (log_buffer); log_view.editable = false; log_view.monospace = true; log_view.cursor_visible = false; log_view.add_css_class ("log-view");
         var scroll = new Gtk.ScrolledWindow (); scroll.min_content_height = 128; scroll.set_child (log_view);
         expander.set_child (scroll);
-        var log_header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        var log_header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         log_header.append (expander);
+        var copy_btn = new Gtk.Button.from_icon_name ("edit-copy-symbolic"); copy_btn.tooltip_text = "Copy log"; copy_btn.add_css_class ("flat");
+        copy_btn.clicked.connect (() => {
+            var clipboard = Gdk.Display.get_default ().get_clipboard ();
+            clipboard.set_text (log_buffer.text);
+            toast_overlay.add_toast (new Adw.Toast ("Activity log copied to clipboard"));
+        });
+        log_header.append (copy_btn);
         var clear_btn = new Gtk.Button.from_icon_name ("edit-clear-all-symbolic"); clear_btn.tooltip_text = "Clear log"; clear_btn.add_css_class ("flat");
         clear_btn.clicked.connect (() => log_buffer.set_text ("", 0));
         log_header.append (clear_btn);
@@ -242,6 +266,14 @@ public class MainWindow : Adw.ApplicationWindow {
         stack.visible_child_name = "home";
         if (page_scroll != null) page_scroll.vadjustment.value = 0;
         title = "CCNux - Creative Cloud Nux";
+    }
+
+    private void select_page_plugins () {
+        current_product = null;
+        stack.visible_child_name = "plugin-manager";
+        if (page_scroll != null) page_scroll.vadjustment.value = 0;
+        title = "CCNux — Plugin & Extension Manager";
+        if (plugin_manager_page != null) plugin_manager_page.refresh_installed_list ();
     }
 
     private void select_product (ProductDefinition? product) {
@@ -272,12 +304,19 @@ public class MainWindow : Adw.ApplicationWindow {
     private AdobeProductInstaller? active_installer () { if (current_product == null) return null; return service_for (current_product); }
 
     private void connect_service (AdobeProductInstaller service) {
-        service.progress.connect ((fraction, message) => { progress.fraction = fraction; status.label = message; append_log (message); });
+        service.progress.connect ((fraction, message) => {
+            progress.fraction = fraction;
+            int pct = (int) (fraction * 100.0);
+            string pct_str = pct > 0 ? "[%d%%] %s".printf (pct, message) : message;
+            status.label = pct_str;
+            append_log (pct_str);
+        });
         service.phase.connect ((step) => { phase_label.label = phase_names[(int) step]; });
         service.log.connect (append_log);
         service.finished.connect ((ok, message) => {
             status.label = message;
             if (!ok) progress.fraction = 0;
+            else progress.fraction = 1.0;
             phase_label.label = "";
             append_log ((ok ? "DONE: " : "FAILED: ") + message);
             toast_overlay.add_toast (new Adw.Toast (message));
@@ -429,7 +468,7 @@ public class MainWindow : Adw.ApplicationWindow {
         int fixed = 0;
 
         if (product.status != ProductStatus.AVAILABLE) {
-            add_diagnostic_row (report, "INFO", "Product staged", "Choose a supported archive before runtime checks can run.");
+            add_diagnostic_row (dialog, report, product, "INFO", "Product staged", "Choose a supported archive before runtime checks can run.");
         } else {
             var service = service_for (product);
             File app_location = service.install_location ();
@@ -440,42 +479,42 @@ public class MainWindow : Adw.ApplicationWindow {
 
             foreach (string row in service.compatibility_diagnostics ()) {
                 int tab = row.index_of ("\t");
-                if (tab < 0) add_diagnostic_row (report, "INFO", "Compatibility", row);
+                if (tab < 0) add_diagnostic_row (dialog, report, product, "INFO", "Compatibility", row);
                 else {
                     string detail = row.substring (tab + 1);
                     string state = detail.has_prefix ("ACTION:") || detail.has_prefix ("BLOCKED:") || detail.has_prefix ("FAIL:") ? "ACTION" : "OK";
-                    add_diagnostic_row (report, state, row.substring (0, tab), detail);
+                    add_diagnostic_row (dialog, report, product, state, row.substring (0, tab), detail);
                 }
             }
 
-            if (prefix.root.query_exists ()) add_diagnostic_row (report, "OK", "Wine prefix", "Ready at " + prefix.root.get_path ());
+            if (prefix.root.query_exists ()) add_diagnostic_row (dialog, report, product, "OK", "Wine prefix", "Ready at " + prefix.root.get_path ());
             else {
-                try { prefix.ensure (); fixed++; add_diagnostic_row (report, "FIXED", "Wine prefix", "Created the missing prefix directory."); }
-                catch (Error e) { issues++; add_diagnostic_row (report, "FAIL", "Wine prefix", e.message); }
+                try { prefix.ensure (); fixed++; add_diagnostic_row (dialog, report, product, "FIXED", "Wine prefix", "Created the missing prefix directory."); }
+                catch (Error e) { issues++; add_diagnostic_row (dialog, report, product, "FAIL", "Wine prefix", e.message); }
             }
 
-            if (app_location.query_exists ()) add_diagnostic_row (report, "OK", "App files", "Installation directory is present.");
-            else { issues++; add_diagnostic_row (report, "ACTION", "App files", "No installation found. Select an archive below the page to install it."); }
+            if (app_location.query_exists ()) add_diagnostic_row (dialog, report, product, "OK", "App files", "Installation directory is present.");
+            else { issues++; add_diagnostic_row (dialog, report, product, "ACTION", "App files", "No installation found. Select an archive below the page to install it."); }
 
             try {
                 if (!plugin_location.query_exists ()) { plugin_location.make_directory_with_parents (); fixed++; }
                 if (!panel_location.query_exists ()) { panel_location.make_directory_with_parents (); fixed++; }
-                add_diagnostic_row (report, fixed > 0 ? "FIXED" : "OK", "Extension folders", fixed > 0 ? "Created missing plug-in and ScriptUI folders." : "Plug-in and ScriptUI folders are ready.");
-            } catch (Error e) { issues++; add_diagnostic_row (report, "FAIL", "Extension folders", e.message); }
+                add_diagnostic_row (dialog, report, product, fixed > 0 ? "FIXED" : "OK", "Extension folders", fixed > 0 ? "Created missing plug-in and ScriptUI folders." : "Plug-in and ScriptUI folders are ready.");
+            } catch (Error e) { issues++; add_diagnostic_row (dialog, report, product, "FAIL", "Extension folders", e.message); }
 
             string? wine = Environment.find_program_in_path ("wine");
-            if (wine != null) add_diagnostic_row (report, "OK", "Wine command", wine);
-            else { issues++; add_diagnostic_row (report, "ACTION", "Wine command", "Wine is not on PATH; install Wine or configure the bundled runner."); }
+            if (wine != null) add_diagnostic_row (dialog, report, product, "OK", "Wine command", wine);
+            else { issues++; add_diagnostic_row (dialog, report, product, "ACTION", "Wine command", "Wine is not on PATH; install Wine or configure the bundled runner."); }
 
             string backend = settings.display_backend;
-            if (backend == "Xwayland" || backend == "Wayland") add_diagnostic_row (report, "OK", "Display backend", backend + " selected.");
-            else { settings.display_backend = "Xwayland"; set_backend (); fixed++; add_diagnostic_row (report, "FIXED", "Display backend", "Reset an unknown backend to Xwayland."); }
+            if (backend == "Xwayland" || backend == "Wayland") add_diagnostic_row (dialog, report, product, "OK", "Display backend", backend + " selected.");
+            else { settings.display_backend = "Xwayland"; set_backend (); fixed++; add_diagnostic_row (dialog, report, product, "FIXED", "Display backend", "Reset an unknown backend to Xwayland."); }
         }
 
         if (issues == 0 && fixed == 0) {
-            add_diagnostic_row (report, "OK", "Nothing to repair", "Looks good. Do it yourself, its Linux btw.");
+            add_diagnostic_row (dialog, report, product, "OK", "Nothing to repair", "All runtime prerequisites, Wine prefixes, and DLL overrides look healthy.");
         } else if (issues == 0) {
-            add_diagnostic_row (report, "DONE", "Automatic repair complete", "%d safe fix%s applied.".printf (fixed, fixed == 1 ? "" : "es"));
+            add_diagnostic_row (dialog, report, product, "DONE", "Automatic repair complete", "%d safe fix%s applied.".printf (fixed, fixed == 1 ? "" : "es"));
         }
         append_log ("Diagnostics complete: %d issue(s), %d automatic fix(es)".printf (issues, fixed));
         dialog.set_extra_child (report);
@@ -486,34 +525,71 @@ public class MainWindow : Adw.ApplicationWindow {
         dialog.close_response = "close";
         dialog.response.connect ((response) => {
             if (response == "fix") {
-                append_log ("INFO: Automatic diagnostic repair requested");
-                toast_overlay.add_toast (new Adw.Toast ("Safe fixes already applied"));
                 dialog.close ();
+                run_automatic_repair (product);
             }
         });
         dialog.present (this);
     }
 
-    private void add_diagnostic_row (Gtk.Box report, string state, string title, string detail) {
-        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+    private void run_automatic_repair (ProductDefinition product) {
+        if (busy) return;
+        var service = service_for (product);
+        if (service == null) return;
+        append_log ("INFO: Starting automated repair for " + product.name);
+        begin_operation ();
+        service.repair.begin (active_cancellable, (obj, res) => {
+            try {
+                service.repair.end (res);
+                append_log ("SUCCESS: Repair completed for " + product.name);
+                toast_overlay.add_toast (new Adw.Toast ("Automated repair complete for " + product.name));
+            } catch (Error e) {
+                append_log ("ERROR during repair: " + e.message);
+                toast_overlay.add_toast (new Adw.Toast ("Repair failed: " + e.message));
+            }
+            end_operation ();
+        });
+    }
+
+    private void add_diagnostic_row (Adw.AlertDialog dialog, Gtk.Box report, ProductDefinition product, string state, string title, string detail) {
+        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
         row.add_css_class ("diagnostic-row");
+        row.margin_top = 4;
+        row.margin_bottom = 4;
+
         var badge = new Gtk.Label (state);
+        badge.add_css_class ("status-badge");
         badge.add_css_class ("diagnostic-badge");
         badge.add_css_class ("diagnostic-" + state.down ());
-        badge.valign = Gtk.Align.START;
+        badge.valign = Gtk.Align.CENTER;
         row.append (badge);
+
         var copy = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
         copy.hexpand = true;
         var heading = new Gtk.Label (title);
         heading.halign = Gtk.Align.START;
-        heading.add_css_class ("diagnostic-title");
+        heading.add_css_class ("card-title");
         copy.append (heading);
         var body = new Gtk.Label (detail);
         body.halign = Gtk.Align.START;
         body.wrap = true;
-        body.add_css_class ("diagnostic-detail");
+        body.add_css_class ("card-meta");
         copy.append (body);
         row.append (copy);
+
+        // Add inline fixer button for items needing attention
+        if (state == "ACTION" || state == "FAIL" || state == "WARN") {
+            var fix_btn = new Gtk.Button.with_label ("Fix");
+            fix_btn.valign = Gtk.Align.CENTER;
+            fix_btn.add_css_class ("suggested-action");
+            fix_btn.add_css_class ("action-button");
+            fix_btn.clicked.connect (() => {
+                dialog.close ();
+                run_automatic_repair (product);
+            });
+            row.append (fix_btn);
+        }
+
         report.append (row);
     }
     public void show_preferences () {
