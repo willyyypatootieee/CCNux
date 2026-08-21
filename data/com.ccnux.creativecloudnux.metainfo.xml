@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.ccnux.creativecloudnux</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>CCNux</name>
+  <summary>Native Linux Manager for Adobe Creative Cloud Suite</summary>
+  <description>
+    <p>
+      CCNux provides a native GTK4/Libadwaita desktop interface for managing, configuring, and accelerating Adobe 2024 applications on Linux.
+    </p>
+    <p>
+      Key features include zero-hardcoding GPU auto-detection, OpenCL dGPU isolation, DXVK Vulkan GPL shader caching, modular plugin routing (Mister Horse Animation Composer, FX Console), and live font synchronization.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.ccnux.creativecloudnux.desktop</launchable>
+  <url type="homepage">https://github.com/willyyypatootieee/CCNux</url>
+  <url type="bugtracker">https://github.com/willyyypatootieee/CCNux/issues</url>
+  <developer_name>CCNux Contributors</developer_name>
+  <provides>
+    <binary>ccnux</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.8.4" date="2026-08-21"/>
+  </releases>
+</component>
