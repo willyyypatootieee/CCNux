@@ -3,17 +3,22 @@ public class IllustratorInstaller : AdobeProductInstaller {
 
     public override string product_folder_name { get { return "Adobe Illustrator 2024"; } }
     public override string[] executable_candidates {
-        owned get { return {"Illustrator.exe", "Illustrator 2024.exe"}; }
+        owned get { return {"Illustrator.exe", "Illustrator 2024.exe", "Support Files/Contents/Windows/Illustrator.exe"}; }
     }
     protected override bool prefer_nvidia { get { return true; } }
     protected override bool use_native_dwrite { get { return true; } }
     protected override bool use_product_icu_aliases { get { return true; } }
     protected override bool use_product_dxvk { get { return true; } }
-    protected override string wine_dll_overrides { get { return CcnuxConfig.VALUE_DWRITE_OVERRIDE; } }
+    protected override string wine_dll_overrides { get { return "d2d1=b,n;dwrite=n,b"; } }
     // 0.8.4 is the NVIDIA bridge version proven with Adobe 2024 on Wine.
     protected override string nvidia_libs_asset { owned get { return "nvidia-libs-0.8.4.tar.xz"; } }
     // vcr.zip is CCNux's supplied vcrun2022-equivalent runtime bundle.
     protected override string[] runtime_archives { owned get { return {"vcr.zip", "msxml3.zip"}; } }
+
+    protected override async void before_launch (Cancellable? cancellable) throws Error {
+        var optimizer = new IllustratorOptimizer (product, prefix, runner);
+        yield optimizer.apply_pre_launch (install_dir, cancellable);
+    }
 
     public override string[] compatibility_diagnostics () {
         string[] rows = base.compatibility_diagnostics ();
@@ -30,5 +35,9 @@ public class IllustratorInstaller : AdobeProductInstaller {
         return rows;
     }
 
+    private File? find_windows_system_file (string name) {
+        var sys32 = prefix.root.get_child ("drive_c/windows/system32").get_child (name);
+        if (sys32.query_exists ()) return sys32;
+        return null;
+    }
 }
-
