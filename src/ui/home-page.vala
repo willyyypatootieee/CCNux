@@ -184,6 +184,14 @@ public class HomePage : Gtk.Box {
         copy.append (meta);
         row.append (copy);
 
+        if (product.status != ProductStatus.AVAILABLE) {
+            var staged = new Gtk.Label ("WIP");
+            staged.add_css_class ("status-badge");
+            staged.add_css_class ("staged");
+            staged.valign = Gtk.Align.CENTER;
+            row.append (staged);
+        }
+
         var arrow = new Gtk.Image.from_icon_name ("go-next-symbolic");
         arrow.add_css_class ("card-arrow");
         arrow.valign = Gtk.Align.CENTER;

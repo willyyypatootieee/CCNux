@@ -1,4 +1,4 @@
-public enum ProductStatus { AVAILABLE, STAGED }
+public enum ProductStatus { AVAILABLE, EXPERIMENTAL, STAGED }
 
 // Keep the compatibility contract data-only so it can be tested without Wine
 // or GTK. Installers consume this policy instead of carrying hidden defaults.
@@ -17,6 +17,7 @@ public class ProductRuntimePolicy : Object {
     public static ProductRuntimePolicy for_product (string id) {
         if (id == "illustrator-2024") return new ProductRuntimePolicy (true, true, false, false, true);
         if (id == "premiere-pro-2024") return new ProductRuntimePolicy (true, true, true, true, true);
+        if (id == "media-encoder-2024") return new ProductRuntimePolicy (true, true, true, true, true);
         if (id == "after-effects-2024") return new ProductRuntimePolicy (true, false, false, false, false);
         return new ProductRuntimePolicy (true, false, false, false, false);
     }
@@ -28,9 +29,11 @@ public class ProductDefinition : Object {
     public string version { get; construct; }
     public string description { get; construct; }
     public ProductStatus status { get; construct; }
+    // WIP is independent from availability: a product can be installable while
+    // its Wine integration is still under active validation.
+    public bool wip { get; construct; }
 
-    public ProductDefinition (string id, string name, string version, string description, ProductStatus status) {
-        Object (id: id, name: name, version: version, description: description, status: status);
+    public ProductDefinition (string id, string name, string version, string description, ProductStatus status, bool wip = false) {
+        Object (id: id, name: name, version: version, description: description, status: status, wip: wip);
     }
 }
-

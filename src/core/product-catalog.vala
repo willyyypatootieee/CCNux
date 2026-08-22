@@ -4,10 +4,10 @@ public class ProductCatalog : Object {
         products += new ProductDefinition ("after-effects-2024", "After Effects", "2024", "Motion graphics and visual effects", ProductStatus.AVAILABLE);
         products += new ProductDefinition ("premiere-pro-2024", "Premiere Pro", "2024", "Video editing", ProductStatus.AVAILABLE);
         products += new ProductDefinition ("illustrator-2024", "Illustrator", "2024", "Vector graphics", ProductStatus.AVAILABLE);
-        products += new ProductDefinition ("photoshop-2024", "Photoshop", "2024", "Image editing", ProductStatus.AVAILABLE);
+        products += new ProductDefinition ("photoshop-2024", "Photoshop", "2024", "Image editing", ProductStatus.AVAILABLE, true);
+        products += new ProductDefinition ("media-encoder-2024", "Media Encoder", "2024", "Batch encoding and export (experimental)", ProductStatus.EXPERIMENTAL);
         products += new ProductDefinition ("additional", "Additional products", "", "More Creative Cloud products will appear here", ProductStatus.STAGED);
     }
     public ProductDefinition[] all () { return products; }
     public ProductDefinition? find (string id) { foreach (var p in products) if (p.id == id) return p; return null; }
 }
-

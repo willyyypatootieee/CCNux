@@ -78,6 +78,7 @@ headerbar title { font-weight: 700; letter-spacing: -0.01em; }
 .product-premiere-pro-2024 { --ccnux-accent: #6b8cff; --ccnux-accent-fg: #07102e; }
 .product-illustrator-2024 { --ccnux-accent: #ff9e54; --ccnux-accent-fg: #251307; }
 .product-photoshop-2024 { --ccnux-accent: #36c6e6; --ccnux-accent-fg: #06232a; }
+.product-media-encoder-2024 { --ccnux-accent: #d879de; --ccnux-accent-fg: #2c0a31; }
 
 .product-card {
   min-height: 84px;
@@ -121,6 +122,7 @@ headerbar title { font-weight: 700; letter-spacing: -0.01em; }
 .status-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; border: 1px solid #4a4a4e; color: #aaa6ae; }
 .status-badge.installed { color: #72d39b; border-color: alpha(#72d39b, 0.55); background: alpha(#72d39b, 0.08); }
 .status-badge.running { color: var(--ccnux-accent); border-color: alpha(currentColor, 0.55); background: alpha(currentColor, 0.08); }
+.status-badge.staged { color: #f3bd63; border-color: alpha(#f3bd63, 0.55); background: alpha(#f3bd63, 0.08); }
 .status-badge.thirdparty { color: #8daeff; border-color: alpha(#8daeff, 0.55); background: alpha(#8daeff, 0.08); }
 .status-badge.builtin { color: #97939b; border-color: alpha(#97939b, 0.35); background: alpha(#97939b, 0.05); }
 

@@ -12,9 +12,9 @@ public class InstallerFactory : Object {
         if (product.id == "premiere-pro-2024") return new PremiereProInstaller (product);
         if (product.id == "illustrator-2024") return new IllustratorInstaller (product);
         if (product.id == "photoshop-2024") return new PhotoshopInstaller (product);
+        if (product.id == "media-encoder-2024") return new MediaEncoderInstaller (product);
         if (product.id == "mister-horse") return new MisterHorseInstaller (product);
         if (product.id == "fx-console") return new FxConsoleInstaller (product);
         return new PhotoshopInstaller (product);
     }
 }
-

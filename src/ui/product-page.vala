@@ -14,6 +14,8 @@ public class ProductPage : Gtk.Box {
     public signal void font_folder_requested ();
 
     private bool available;
+    private bool experimental;
+    private bool wip;
     private Gtk.Button install_btn;
     private Gtk.Button run_btn;
     private Gtk.ListBoxRow kill_row;
@@ -24,7 +26,9 @@ public class ProductPage : Gtk.Box {
     public ProductPage (ProductDefinition product) {
         Object (orientation: Gtk.Orientation.VERTICAL, spacing: 0, margin_top: 12, margin_bottom: 12, margin_start: 20, margin_end: 20);
         this.product = product;
-        available = product.status == ProductStatus.AVAILABLE;
+        available = product.status != ProductStatus.STAGED;
+        experimental = product.status == ProductStatus.EXPERIMENTAL;
+        wip = product.wip;
         add_css_class ("product-page");
         add_css_class ("product-" + product.id);
 
@@ -49,8 +53,9 @@ public class ProductPage : Gtk.Box {
         hero_copy.append (description);
         hero.append (hero_copy);
 
-        status_badge = new Gtk.Label ("Not installed");
+        status_badge = new Gtk.Label (!available ? "Work in progress" : ((experimental || wip) ? "WIP / not installed" : "Not installed"));
         status_badge.add_css_class ("status-badge");
+        if (!available || experimental || wip) status_badge.add_css_class ("staged");
         status_badge.valign = Gtk.Align.CENTER;
         hero.append (status_badge);
         append (hero);
@@ -78,7 +83,7 @@ public class ProductPage : Gtk.Box {
         run_btn.clicked.connect (() => run_requested ());
         btn_box.append (run_btn);
 
-        install_btn = new Gtk.Button.with_label ("Install archive");
+        install_btn = new Gtk.Button.with_label (!available ? "Coming soon" : (experimental ? "Install experimental archive" : "Install archive"));
         install_btn.add_css_class ("action-button");
         install_btn.sensitive = available;
         install_btn.clicked.connect (() => install_requested ());
@@ -110,7 +115,7 @@ public class ProductPage : Gtk.Box {
         details.attach (build_info_card ("PRIMARY FOCUS", product_focus (product)), 0, 0, 1, 1);
         details.attach (build_info_card ("COMMON WORK", product_work (product)), 1, 0, 1, 1);
         details.attach (build_info_card ("RUNS THROUGH", "Wine prefix with " + product.version + " support"), 0, 1, 1, 1);
-        details.attach (build_info_card ("YOUR FILES", "Projects stay in your folders; CCNux manages the app runtime"), 1, 1, 1, 1);
+        details.attach (build_info_card ("YOUR FILES", product.id == "media-encoder-2024" ? "Queue bridge: ccnux-media-encoder://enqueue?file=..." : "Projects stay in your folders; CCNux manages the app runtime"), 1, 1, 1, 1);
         append (details);
 
         // 5. Tools & Locations Grid
@@ -167,8 +172,9 @@ public class ProductPage : Gtk.Box {
     }
 
     public void set_installed (bool installed) {
-        status_badge.label = installed ? "Installed" : "Not installed";
-        install_btn.label = installed ? "Reinstall archive" : "Install archive";
+        if (!available) return;
+        status_badge.label = installed ? ((experimental || wip) ? "Installed / WIP" : "Installed") : ((experimental || wip) ? "WIP / not installed" : "Not installed");
+        install_btn.label = installed ? "Reinstall archive" : (experimental ? "Install experimental archive" : "Install archive");
         if (installed) status_badge.add_css_class ("installed");
         else status_badge.remove_css_class ("installed");
         status_badge.remove_css_class ("running");
@@ -236,6 +242,7 @@ public class ProductPage : Gtk.Box {
         if (item.id == "after-effects-2024") return "After Effects is Adobe's motion graphics and visual effects studio. Build animated titles, composites, transitions, and cinematic effects by combining layers, keyframes, and 3D space.";
         if (item.id == "premiere-pro-2024") return "Premiere Pro is a timeline-based video editor for turning clips, sound, and graphics into finished films, videos, and social content.";
         if (item.id == "illustrator-2024") return "Illustrator is a vector design studio for logos, icons, illustrations, typography, and artwork that stays sharp at any size.";
+        if (item.id == "media-encoder-2024") return "Media Encoder is Adobe's background encoding and export companion for rendering media queues from Premiere Pro, After Effects, and other Creative Cloud tools. Its CCNux installer is experimental and will report detailed compatibility diagnostics before launch.";
         return "Photoshop is a pixel-based image studio for retouching, compositing, painting, and preparing still images for print or the web.";
     }
 
@@ -243,6 +250,7 @@ public class ProductPage : Gtk.Box {
         if (item.id == "after-effects-2024") return "Animation + VFX";
         if (item.id == "premiere-pro-2024") return "Video editing";
         if (item.id == "illustrator-2024") return "Vector design";
+        if (item.id == "media-encoder-2024") return "Batch encoding";
         return "Image editing";
     }
 
@@ -250,6 +258,7 @@ public class ProductPage : Gtk.Box {
         if (item.id == "after-effects-2024") return "Titles, compositing, motion";
         if (item.id == "premiere-pro-2024") return "Cuts, audio, color";
         if (item.id == "illustrator-2024") return "Branding, type, icons";
+        if (item.id == "media-encoder-2024") return "Render queues, transcodes, exports";
         return "Retouching, layers, exports";
     }
 }

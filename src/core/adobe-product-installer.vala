@@ -36,6 +36,7 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
     protected virtual string[] runtime_archives { owned get { return {"vcr.zip", "msxml3.zip"}; } }
     protected virtual bool launch_with_portal { get { return false; } }
     protected virtual bool prefer_nvidia { get { return false; } }
+    protected virtual bool use_host_gpu { get { return false; } }
     protected virtual string wine_dll_overrides { get { return ""; } }
     protected virtual bool use_native_dwrite { get { return false; } }
     protected virtual bool use_product_icu_aliases { get { return false; } }
@@ -96,7 +97,7 @@ public abstract class AdobeProductInstaller : Object, InstallerService {
             service_manager.log.connect (emit_log);
             yield launcher.launch (
                 product, executable, install_dir, prefix, runner, display_backend,
-                prefer_nvidia, wine_dll_overrides, launch_with_portal, project_path,
+                prefer_nvidia, use_host_gpu, wine_dll_overrides, launch_with_portal, project_path,
                 service_manager, product_folder_name, disabled_adobe_service_names,
                 project_to_wine_path (project_path != null ? project_path : ""), cancellable
             );

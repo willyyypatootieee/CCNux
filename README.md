@@ -28,6 +28,7 @@
 | **Adobe Premiere Pro** | `2024` | Working | OpenCL `nvidia.icd` dGPU Isolation, Mercury Playback Engine CUDA & UXP Panels |
 | **Adobe Illustrator** | `2024` | Working | NVIDIA GPU Acceleration, UXP Home Screen, Direct3D CSMT Level 3 & `AdobeCleanUX` Font Engine |
 | **Adobe Photoshop** | `2024` | WIP | Direct3D 11 / DXVK acceleration & Native Font Smoothing |
+| **Adobe Media Encoder** | `2024` | WIP | Background encoding and export queue support |
 
 > **GPU Acceleration & UXP Canvas in Action**:
 > 
@@ -189,7 +190,7 @@ meson compile -C build
 - [ ] **Self-Contained Flatpak & AppImage Packages**: Universal single-file Linux application bundles with pre-configured Wine runtimes.
 - [ ] **Native Distribution Packages**: Build scripts and PKGBUILDs for Arch Linux (AUR), Debian/Ubuntu (`.deb`), and Fedora (`.rpm`).
 - [ ] **Adobe Creative Cloud Desktop App Bridge**: Support for running official CC desktop services for login and cloud library sync.
-- [ ] **Media Encoder 2024 Integration**: Background queue rendering support across After Effects and Premiere Pro.
+- [ ] 🚧 **Media Encoder 2024 Integration**: Background queue rendering support across After Effects and Premiere Pro.
 - [ ] **Automated Hardware & GPU Diagnostics**: Built-in diagnostic wizard analyzing `vulkaninfo`, `clinfo`, and driver capabilities before app launch.
 
 ---

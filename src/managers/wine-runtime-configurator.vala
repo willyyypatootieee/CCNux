@@ -43,7 +43,10 @@ public class WineRuntimeConfigurator : Object {
 
     private async void ensure_core_assets (Cancellable? cancellable) throws Error {
         var core_dir = File.new_for_path (CcnuxConfig.get_assets_dir () + "/ccnux-core-assets");
-        if (core_dir.query_exists ()) return;
+        if (core_dir.query_exists ()) {
+            log ("Using existing local ccnux-core-assets release bundle");
+            return;
+        }
 
         log ("Core assets not found locally. Downloading ccnux-core-assets-newest.zip from GitHub Releases...");
         var archive = File.new_build_filename (Environment.get_user_data_dir (), "ccnux", "runner", "assets", "ccnux-core-assets-newest.zip");

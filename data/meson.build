@@ -5,6 +5,7 @@ install_data(
   'com.ccnux.premiere-pro.desktop',
   'com.ccnux.illustrator.desktop',
   'com.ccnux.photoshop.desktop',
+  'com.ccnux.media-encoder.desktop',
   install_dir: get_option('datadir') / 'applications'
 )
 
@@ -13,6 +14,12 @@ install_data(
   '../assets/icons/ccnux.png',
   install_dir: get_option('datadir') / 'icons/hicolor/512x512/apps',
   rename: 'com.ccnux.creativecloudnux.png'
+)
+
+install_data(
+  '../assets/icons/media-encoder.svg',
+  install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps',
+  rename: 'com.ccnux.media-encoder.svg'
 )
 
 # AppStream Metadata

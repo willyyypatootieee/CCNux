@@ -2,7 +2,7 @@ public class CcnuxApplication : Adw.Application {
     private MainWindow? window;
 
     private const OptionEntry[] option_entries = {
-        { "run", 'r', 0, OptionArg.STRING, null, "Launch a product directly (after-effects-2024, premiere-pro-2024, illustrator-2024, photoshop-2024)", null },
+        { "run", 'r', 0, OptionArg.STRING, null, "Launch a product directly (after-effects-2024, premiere-pro-2024, illustrator-2024, photoshop-2024, media-encoder-2024)", null },
         { null }
     };
 
@@ -53,10 +53,16 @@ public class CcnuxApplication : Adw.Application {
         }
         if (run != null || file_path != null) {
             ensure_window ();
-            if (run != null) {
+            // A desktop launcher invocation has no existing visible window.
+            // Present it before an asynchronous Wine preflight so launch
+            // failures are actionable instead of looking like a dead click.
+            window.present ();
+            if (file_path != null && (file_path.has_prefix ("misterhorse://") || file_path.has_prefix ("ccnux-media-encoder://"))) {
+                window.handle_url (file_path);
+            } else if (run != null) {
                 window.run_product (run, file_path);
             } else if (file_path != null) {
-                if (file_path.has_prefix ("misterhorse://")) {
+                if (file_path.has_prefix ("misterhorse://") || file_path.has_prefix ("ccnux-media-encoder://")) {
                     window.present ();
                     window.handle_url (file_path);
                 } else {

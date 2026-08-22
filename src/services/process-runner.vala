@@ -3,6 +3,10 @@ public class ProcessRunner : Object {
     private Subprocess? active_process;
     public string display_backend { get; set; default = "Xwayland"; }
     public bool prefer_nvidia { get; set; default = false; }
+    // Keep the historical software OpenGL fallback unless a product explicitly
+    // opts into host-GPU rendering.  This prevents a Media Encoder experiment
+    // from changing the launch contract of the established products.
+    public bool use_host_gpu { get; set; default = false; }
     public string wine_dll_overrides { get; set; default = ""; }
 
     private SubprocessLauncher make_launcher (string? cwd, bool use_portal, File? prefix, string runner_bin) {
@@ -14,8 +18,15 @@ public class ProcessRunner : Object {
         // Apply Global Performance & Stability Optimizations
         GlobalOptimizer.apply_environment (launcher, display_backend == "Xwayland");
 
-        launcher.setenv ("LIBGL_ALWAYS_SOFTWARE", "1", true);
-        launcher.setenv ("GALLIUM_DRIVER", "llvmpipe", true);
+        if (use_host_gpu) {
+            // GlobalOptimizer has already selected the discrete NVIDIA stack
+            // when it is available.  Do not override it with llvmpipe here.
+            launcher.setenv ("LIBGL_ALWAYS_SOFTWARE", "0", true);
+            launcher.unsetenv ("GALLIUM_DRIVER");
+        } else {
+            launcher.setenv ("LIBGL_ALWAYS_SOFTWARE", "1", true);
+            launcher.setenv ("GALLIUM_DRIVER", "llvmpipe", true);
+        }
         launcher.setenv ("WINEDLLPATH", "/tmp", true);
 
         string overrides = wine_dll_overrides;

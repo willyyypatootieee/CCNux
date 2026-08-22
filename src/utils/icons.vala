@@ -8,6 +8,7 @@ public class ProductIcons {
             case "premiere-pro-2024": return "/com/ccnux/CreativeCloudNux/icons/premiere-pro.png";
             case "illustrator-2024": return "/com/ccnux/CreativeCloudNux/icons/illustrator.png";
             case "photoshop-2024": return "/com/ccnux/CreativeCloudNux/icons/photoshop.png";
+            case "media-encoder-2024": return "/com/ccnux/CreativeCloudNux/icons/media-encoder.svg";
             default: return "/com/ccnux/CreativeCloudNux/icons/additional.png";
         }
     }

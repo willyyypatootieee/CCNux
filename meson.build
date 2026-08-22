@@ -33,6 +33,8 @@ sources = files(
 
   # Services Layer
   'src/services/process-runner.vala',
+  'src/services/wine-application-monitor.vala',
+  'src/services/wine-launch-coordinator.vala',
   'src/services/wine-prefix-service.vala',
   'src/services/archive-service.vala',
   'src/services/plugin/plugin-types.vala',
@@ -44,12 +46,14 @@ sources = files(
   'src/services/optimization/after-effects-optimizer.vala',
   'src/services/optimization/premiere-pro-optimizer.vala',
   'src/services/optimization/illustrator-optimizer.vala',
+  'src/services/optimization/media-encoder-optimizer.vala',
   'src/services/adobe-common-import-service.vala',
   'src/services/download-service.vala',
   'src/services/registry-service.vala',
   'src/services/desktop-integration-service.vala',
   'src/services/settings-service.vala',
   'src/services/system-specs-service.vala',
+  'src/services/media-encoder-queue-bridge.vala',
 
   # Modular Managers
   'src/managers/adobe-archive-installer.vala',
@@ -72,6 +76,7 @@ sources = files(
   'src/installers/premiere-pro-installer.vala',
   'src/installers/illustrator-installer.vala',
   'src/installers/photoshop-installer.vala',
+  'src/installers/media-encoder-installer.vala',
   'src/installers/mister-horse-installer.vala',
   'src/installers/fx-console-installer.vala',
 )

@@ -30,6 +30,9 @@ public class MainWindow : Adw.ApplicationWindow {
     private ProductDefinition? current_product;
     private bool busy = false;
     private Cancellable? active_cancellable;
+    // Launches are independent: Wine's shared wineserver supports two Adobe
+    // applications concurrently. Only install/repair/uninstall remains exclusive.
+    private WineLaunchCoordinator launch_coordinator = new WineLaunchCoordinator ();
 
     public MainWindow (CcnuxApplication app) {
         Object (application: app, title: "CCNux - Creative Cloud Nux", default_width: 1060, default_height: 720);
@@ -65,10 +68,10 @@ public class MainWindow : Adw.ApplicationWindow {
         stack.add_named (plugin_manager_page, "plugin-manager");
 
         foreach (var product in catalog.all ()) {
-            if (product.status != ProductStatus.AVAILABLE) continue;
+            if (product.status == ProductStatus.STAGED) continue;
             var inst = InstallerFactory.create_installer (product);
             installers.insert (product.id, inst);
-            connect_service (inst);
+            connect_service (inst, product);
         }
 
         int index = 0;
@@ -138,6 +141,24 @@ public class MainWindow : Adw.ApplicationWindow {
                     mh_installer.run.begin (url, active_cancellable);
                 }
             }
+            return;
+        }
+        if (MediaEncoderQueueBridge.accepts (url)) {
+            var bridge = new MediaEncoderQueueBridge ();
+            string? source = bridge.source_from_uri (url);
+            if (source == null) {
+                append_log ("ERROR: Media Encoder queue URI needs a valid local file: " + url);
+                toast_overlay.add_toast (new Adw.Toast ("Media Encoder queue URI has no valid file"));
+                return;
+            }
+            append_log ("INFO: Media Encoder queue bridge received " + source);
+            append_log ("INFO: " + MediaEncoderQueueBridge.queue_description (source));
+            if (MediaEncoderQueueBridge.is_dynamic_link_project (source)) {
+                append_log ("ERROR: Native Dynamic Link queue blocked: dynamiclinkmanager cannot keep its IPC server alive under the current Wine runner.");
+                toast_overlay.add_toast (new Adw.Toast ("Dynamic Link is not available in this Wine runner yet"));
+                return;
+            }
+            run_product ("media-encoder-2024", source);
         }
     }
 
@@ -146,13 +167,7 @@ public class MainWindow : Adw.ApplicationWindow {
         if (product == null) { append_log ("ERROR: Unknown product id: " + id); return; }
         select_product (product);
         select_sidebar_row (product_index (product) + 3);
-        if (is_supported () && !busy) {
-            set_backend ();
-            append_log ("INFO: Launch requested for " + product.name + (project_path != null ? (" with project " + project_path) : ""));
-            begin_operation ();
-            mark_running (product);
-            active_installer ().run.begin (project_path, active_cancellable);
-        } else append_log ("ERROR: %s is not available for launch".printf (product.name));
+        launch_product (product, project_path);
     }
 
     private Gtk.Widget build_sidebar () {
@@ -283,7 +298,8 @@ public class MainWindow : Adw.ApplicationWindow {
         if (page_scroll != null) page_scroll.vadjustment.value = 0;
         title = "CCNux — " + product.name + (product.version != "" ? " " + product.version : "");
         var page = page_map.lookup (product.id);
-        if (page != null) page.set_installed (service_for (product).install_location ().query_exists ());
+        var service = service_for (product);
+        if (page != null && service != null) page.set_installed (service.install_location ().query_exists ());
     }
 
     private void select_sidebar_row (int index) {
@@ -297,13 +313,13 @@ public class MainWindow : Adw.ApplicationWindow {
         return 0;
     }
 
-    private bool is_supported () { return current_product != null && current_product.status == ProductStatus.AVAILABLE; }
+    private bool is_supported () { return current_product != null && current_product.status != ProductStatus.STAGED; }
     private AdobeProductInstaller? service_for (ProductDefinition product) {
         return installers.lookup (product.id);
     }
     private AdobeProductInstaller? active_installer () { if (current_product == null) return null; return service_for (current_product); }
 
-    private void connect_service (AdobeProductInstaller service) {
+    private void connect_service (AdobeProductInstaller service, ProductDefinition product) {
         service.progress.connect ((fraction, message) => {
             progress.fraction = fraction;
             int pct = (int) (fraction * 100.0);
@@ -320,6 +336,10 @@ public class MainWindow : Adw.ApplicationWindow {
             phase_label.label = "";
             append_log ((ok ? "DONE: " : "FAILED: ") + message);
             toast_overlay.add_toast (new Adw.Toast (message));
+            if (launch_coordinator.release (product.id)) {
+                mark_not_running (product);
+                return;
+            }
             end_operation ();
             if (current_product != null) {
                 var page = page_map.lookup (current_product.id);
@@ -351,6 +371,15 @@ public class MainWindow : Adw.ApplicationWindow {
         var page = page_map.lookup (product.id);
         if (page != null) { page.set_running (true); page.set_running_badge (true); }
     }
+    private void mark_not_running (ProductDefinition product) {
+        var page = page_map.lookup (product.id);
+        if (page != null) {
+            page.set_running (false);
+            page.set_running_badge (false);
+            var service = service_for (product);
+            if (service != null) page.set_installed (service.install_location ().query_exists ());
+        }
+    }
     private void set_running (bool running) {
         if (current_product == null) return;
         var page = page_map.lookup (current_product.id);
@@ -373,16 +402,41 @@ public class MainWindow : Adw.ApplicationWindow {
         dialog.open.begin (this, null, (obj, result) => { try { var file = dialog.open.end (result); settings.last_archive = file.get_path (); set_backend (); append_log ("INFO: Selected archive: " + file.get_path ()); begin_operation (); active_installer ().install.begin (file, active_cancellable); } catch (Error e) { append_log ("ERROR: Archive selection cancelled or failed: " + e.message); } });
     }
     private void run_current () {
-        if (!is_supported () || busy) return;
+        if (current_product != null) launch_product (current_product, null);
+    }
+
+    private void launch_product (ProductDefinition product, string? project_path) {
+        if (product.status == ProductStatus.STAGED) {
+            append_log ("ERROR: %s is not available for launch".printf (product.name));
+            return;
+        }
+        if (busy) {
+            append_log ("ERROR: Finish the active install, repair, or uninstall before launching " + product.name);
+            return;
+        }
+        if (launch_coordinator.is_reserved (product.id)) {
+            append_log ("INFO: " + product.name + " is already launching or running");
+            return;
+        }
+        if (!launch_coordinator.reserve (product.id)) {
+            append_log ("ERROR: Could not reserve a Wine application session for " + product.name);
+            toast_overlay.add_toast (new Adw.Toast ("This Adobe application is already launching"));
+            return;
+        }
+        var service = service_for (product);
+        if (service == null) {
+            launch_coordinator.release (product.id);
+            append_log ("ERROR: No launcher is available for " + product.name);
+            return;
+        }
         set_backend ();
-        append_log ("INFO: Launch requested for " + current_product.name);
-        begin_operation ();
-        mark_running (current_product);
-        active_installer ().run.begin (null, active_cancellable);
+        mark_running (product);
+        append_log ("INFO: Launch requested for " + product.name + " (shared Wine prefix; %u Adobe application(s) active)".printf (launch_coordinator.active_count) + (project_path != null ? (" with project " + project_path) : ""));
+        service.run.begin (project_path, new Cancellable ());
     }
 
     private void repair_product (ProductDefinition product) {
-        if (busy || product.status != ProductStatus.AVAILABLE) return;
+        if (busy || product.status == ProductStatus.STAGED) return;
         select_product (product); set_backend (); begin_operation (); append_log ("INFO: Repairing %s DXVK/ICU runtime".printf (product.name));
         service_for (product).repair_compatibility.begin (active_cancellable);
     }
@@ -419,7 +473,7 @@ public class MainWindow : Adw.ApplicationWindow {
     }
     private void browse (ProductDefinition product, string target) {
         File location;
-        if (product.status != ProductStatus.AVAILABLE) { append_log (product.name + " diagnostics: product is staged; no Wine locations are created."); return; }
+        if (product.status == ProductStatus.STAGED) { append_log (product.name + " diagnostics: product is staged; no Wine locations are created."); return; }
         var service = service_for (product);
         File app_location = service.install_location ();
         if (target == "app") location = app_location;
@@ -467,7 +521,7 @@ public class MainWindow : Adw.ApplicationWindow {
         int issues = 0;
         int fixed = 0;
 
-        if (product.status != ProductStatus.AVAILABLE) {
+        if (product.status == ProductStatus.STAGED) {
             add_diagnostic_row (dialog, report, product, "INFO", "Product staged", "Choose a supported archive before runtime checks can run.");
         } else {
             var service = service_for (product);
@@ -683,4 +737,3 @@ public class MainWindow : Adw.ApplicationWindow {
         }
     }
 }
-
