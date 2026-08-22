@@ -1,0 +1,18 @@
+[Desktop Entry]
+Name=Adobe Media Encoder 2024
+GenericName=Media encoder
+Comment=Adobe Media Encoder 2024 through CCNux Wine runner
+Exec=ccnux --run media-encoder-2024 %U
+Icon=com.ccnux.media-encoder
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;
+Keywords=adobe;media;encoder;export;transcode;render;wine;
+MimeType=x-scheme-handler/ccnux-media-encoder;
+StartupNotify=true
+StartupWMClass=Adobe Media Encoder
+Actions=OpenEncoder;
+
+[Desktop Action OpenEncoder]
+Name=Open Adobe Media Encoder
+Exec=ccnux --run media-encoder-2024
